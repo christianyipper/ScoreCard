@@ -12,6 +12,13 @@ enum TeamSide: String, CaseIterable, Identifiable, Codable {
         case .away: return "Away"
         }
     }
+
+    var opposite: TeamSide {
+        switch self {
+        case .home: return .away
+        case .away: return .home
+        }
+    }
 }
 
 enum GamePeriod: Int, CaseIterable, Identifiable, Codable, Comparable {
@@ -36,13 +43,8 @@ enum GamePeriod: Int, CaseIterable, Identifiable, Codable, Comparable {
         case .first: return "Period 1"
         case .second: return "Period 2"
         case .third: return "Period 3"
-        case .overtime: return "Period 4+ (OT)"
+        case .overtime: return "Period 4+"
         }
-    }
-
-    /// Regulation period length in seconds, used to bound penalty windows.
-    var lengthSeconds: Int {
-        self == .overtime ? 300 : 1200
     }
 
     static func < (lhs: GamePeriod, rhs: GamePeriod) -> Bool {
@@ -50,121 +52,82 @@ enum GamePeriod: Int, CaseIterable, Identifiable, Codable, Comparable {
     }
 }
 
+/// The penalty types selectable from the Add Penalty dropdown, grouped into
+/// two rows of three buttons.
 enum PenaltyType: String, CaseIterable, Identifiable, Codable {
     case minor
     case doubleMinor
     case major
-    case misconduct
+    case match
+    case misc
+    case gameMisconduct
 
     var id: String { rawValue }
 
     var label: String {
         switch self {
-        case .minor: return "Minor (2 min)"
-        case .doubleMinor: return "Double Minor (4 min)"
-        case .major: return "Major (5 min)"
-        case .misconduct: return "Misconduct (10 min)"
-        }
-    }
-
-    var shortLabel: String {
-        switch self {
-        case .minor: return "2 min"
-        case .doubleMinor: return "4 min"
-        case .major: return "5 min"
-        case .misconduct: return "10 min"
-        }
-    }
-
-    var durationSeconds: Int {
-        switch self {
-        case .minor: return 120
-        case .doubleMinor: return 240
-        case .major: return 300
-        case .misconduct: return 600
-        }
-    }
-
-    /// Misconducts are served without reducing skaters on the ice.
-    var affectsStrength: Bool {
-        self != .misconduct
-    }
-}
-
-enum GoalStrength: String, Codable {
-    case evenStrength
-    case powerPlay
-    case shortHanded
-
-    var abbreviation: String {
-        switch self {
-        case .evenStrength: return "EV"
-        case .powerPlay: return "PP"
-        case .shortHanded: return "SH"
-        }
-    }
-
-    var label: String {
-        switch self {
-        case .evenStrength: return "Even Strength"
-        case .powerPlay: return "Power Play"
-        case .shortHanded: return "Short Handed"
+        case .minor: return "Minor"
+        case .doubleMinor: return "Double Minor"
+        case .major: return "Major"
+        case .match: return "Match"
+        case .misc: return "Misc"
+        case .gameMisconduct: return "GM"
         }
     }
 }
 
-/// A time within a period, stored as elapsed seconds since the period started.
-struct PeriodTime: Codable, Equatable {
-    var elapsedSeconds: Int
+/// The two rows the penalty-type dropdown groups its buttons into. Each row
+/// is single-select on its own, but a selection from one row combines with a
+/// selection from the other (e.g. Minor + GM).
+enum PenaltyTypeRow: CaseIterable, Hashable {
+    case severity
+    case additional
 
-    var displayString: String {
-        let m = elapsedSeconds / 60
-        let s = elapsedSeconds % 60
-        return String(format: "%d:%02d", m, s)
-    }
-
-    /// Best-effort parse of "MM:SS", "M:SS", or a bare number of minutes.
-    static func parse(_ text: String) -> PeriodTime? {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-        let parts = trimmed.split(separator: ":")
-        if parts.count == 2, let m = Int(parts[0]), let s = Int(parts[1]) {
-            return PeriodTime(elapsedSeconds: m * 60 + s)
+    var types: [PenaltyType] {
+        switch self {
+        case .severity: return [.minor, .doubleMinor, .major]
+        case .additional: return [.match, .misc, .gameMisconduct]
         }
-        if parts.count == 1, let m = Int(parts[0]) {
-            return PeriodTime(elapsedSeconds: m * 60)
-        }
-        return nil
     }
 }
 
+/// A penalty entry's display text is its selected penalty type(s) (e.g.
+/// "Minor + GM") plus an optional free-form note.
 struct PenaltyEntry: Identifiable, Codable, Equatable {
     let id: UUID
     var team: TeamSide
     var period: GamePeriod
-    var playerNumber: String
-    var infraction: String
-    var type: PenaltyType
-    var time: PeriodTime
-    var rawNoteText: String
+    var types: [PenaltyType]
+    var text: String
 
-    init(id: UUID = UUID(), team: TeamSide, period: GamePeriod, playerNumber: String, infraction: String, type: PenaltyType, time: PeriodTime, rawNoteText: String) {
+    init(id: UUID = UUID(), team: TeamSide, period: GamePeriod, types: [PenaltyType] = [], text: String = "") {
         self.id = id
         self.team = team
         self.period = period
-        self.playerNumber = playerNumber
-        self.infraction = infraction
-        self.type = type
-        self.time = time
-        self.rawNoteText = rawNoteText
+        self.types = types
+        self.text = text
     }
 
-    var endElapsedSeconds: Int {
-        min(time.elapsedSeconds + type.durationSeconds, period.lengthSeconds)
+    private enum CodingKeys: String, CodingKey {
+        case id, team, period, types, text
     }
 
-    func isActive(at elapsedSeconds: Int) -> Bool {
-        type.affectsStrength && elapsedSeconds >= time.elapsedSeconds && elapsedSeconds < endElapsedSeconds
+    /// Custom decoding so gamesheets saved before `types` existed (which
+    /// lack that key entirely) still decode instead of failing the whole
+    /// saved-gamesheets array.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        team = try container.decode(TeamSide.self, forKey: .team)
+        period = try container.decode(GamePeriod.self, forKey: .period)
+        types = try container.decodeIfPresent([PenaltyType].self, forKey: .types) ?? []
+        text = try container.decode(String.self, forKey: .text)
+    }
+
+    var displayText: String {
+        [types.map(\.label).joined(separator: " + "), text]
+            .filter { !$0.isEmpty }
+            .joined(separator: " - ")
     }
 }
 
@@ -172,24 +135,18 @@ struct GoalEntry: Identifiable, Codable, Equatable {
     let id: UUID
     var team: TeamSide
     var period: GamePeriod
-    var playerNumber: String
-    var assist: String
-    var time: PeriodTime
-    var rawNoteText: String
+    var text: String
 
-    init(id: UUID = UUID(), team: TeamSide, period: GamePeriod, playerNumber: String, assist: String, time: PeriodTime, rawNoteText: String) {
+    init(id: UUID = UUID(), team: TeamSide, period: GamePeriod, text: String = "") {
         self.id = id
         self.team = team
         self.period = period
-        self.playerNumber = playerNumber
-        self.assist = assist
-        self.time = time
-        self.rawNoteText = rawNoteText
+        self.text = text
     }
 }
 
-/// A free-form note that was submitted from the drawing notepad but is not
-/// tied to a specific goal or penalty (e.g. a general observation).
+/// A free-form note submitted from the Quick Note field that isn't tied to
+/// a specific goal or penalty (e.g. a general observation).
 struct GeneralNote: Identifiable, Codable, Equatable {
     let id: UUID
     var period: GamePeriod
@@ -201,5 +158,65 @@ struct GeneralNote: Identifiable, Codable, Equatable {
         self.period = period
         self.text = text
         self.createdAt = createdAt
+    }
+}
+
+/// A saved snapshot of a `GameState`, persisted so a game can be closed and
+/// reopened later from the hamburger menu's gamesheet list.
+struct GameSheet: Identifiable, Codable, Equatable {
+    let id: UUID
+    var name: String
+    var savedAt: Date
+    var teamNames: [TeamSide: String]
+    var shots: [TeamSide: [GamePeriod: Int]]
+    var goals: [GoalEntry]
+    var penalties: [PenaltyEntry]
+    var generalNotes: [GeneralNote]
+    var currentPeriod: GamePeriod
+    var goaltenderNotes: [TeamSide: String]
+
+    init(
+        id: UUID,
+        name: String,
+        savedAt: Date,
+        teamNames: [TeamSide: String],
+        shots: [TeamSide: [GamePeriod: Int]],
+        goals: [GoalEntry],
+        penalties: [PenaltyEntry],
+        generalNotes: [GeneralNote],
+        currentPeriod: GamePeriod,
+        goaltenderNotes: [TeamSide: String]
+    ) {
+        self.id = id
+        self.name = name
+        self.savedAt = savedAt
+        self.teamNames = teamNames
+        self.shots = shots
+        self.goals = goals
+        self.penalties = penalties
+        self.generalNotes = generalNotes
+        self.currentPeriod = currentPeriod
+        self.goaltenderNotes = goaltenderNotes
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, savedAt, teamNames, shots, goals, penalties, generalNotes, currentPeriod, goaltenderNotes
+    }
+
+    /// Custom decoding so gamesheets saved before `goaltenderNotes` existed
+    /// (which lack that key entirely) still decode instead of failing the
+    /// whole saved-gamesheets array.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        savedAt = try container.decode(Date.self, forKey: .savedAt)
+        teamNames = try container.decode([TeamSide: String].self, forKey: .teamNames)
+        shots = try container.decode([TeamSide: [GamePeriod: Int]].self, forKey: .shots)
+        goals = try container.decode([GoalEntry].self, forKey: .goals)
+        penalties = try container.decode([PenaltyEntry].self, forKey: .penalties)
+        generalNotes = try container.decode([GeneralNote].self, forKey: .generalNotes)
+        currentPeriod = try container.decode(GamePeriod.self, forKey: .currentPeriod)
+        goaltenderNotes = try container.decodeIfPresent([TeamSide: String].self, forKey: .goaltenderNotes) ?? [.home: "", .away: ""]
     }
 }

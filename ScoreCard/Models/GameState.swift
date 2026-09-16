@@ -1,10 +1,20 @@
 import Foundation
 import Combine
+import SwiftUI
 
 @MainActor
 final class GameState: ObservableObject {
     @Published var teamNames: [TeamSide: String] = [.home: "Home", .away: "Away"]
     @Published var currentPeriod: GamePeriod = .first
+
+    /// Toggled by `flipSides()` so each team's accent color (score, shots
+    /// button, report text) travels with it across the flip instead of
+    /// staying pinned to the home/away slot.
+    @Published var colorsSwapped = false
+
+    func accentColor(for team: TeamSide) -> Color {
+        (colorsSwapped ? team.opposite : team).accentColor
+    }
 
     @Published var shots: [TeamSide: [GamePeriod: Int]] = [
         .home: [:],
@@ -14,6 +24,77 @@ final class GameState: ObservableObject {
     @Published var goals: [GoalEntry] = []
     @Published var penalties: [PenaltyEntry] = []
     @Published var generalNotes: [GeneralNote] = []
+
+    /// Free-form, manually-edited goaltender notes shown at the bottom of
+    /// the report, one per side.
+    @Published var goaltenderNotes: [TeamSide: String] = [.home: "", .away: ""]
+
+    /// Set once this game has been saved or loaded as a `GameSheet`, so a
+    /// later Save updates that same sheet instead of creating a new one.
+    @Published var currentSheetID: UUID?
+
+    /// Scratchpad notepads shared between the Notes tab and the Add Goal/Add
+    /// Penalty buttons: whatever's written on the current page becomes the
+    /// new entry's text. Users can swipe forward to a fresh blank notepad
+    /// once the current one has text, up to `maxNotepads` at a time, so
+    /// several notes can be drafted before any of them is submitted.
+    @Published var draftNotepads: [String] = [""]
+    @Published var currentNotepadIndex: Int = 0
+
+    static let maxNotepads = 5
+
+    private var draftNoteTextUndoBuffer: String?
+
+    var canUndoDraftNoteText: Bool { draftNoteTextUndoBuffer != nil }
+
+    /// The text on the currently visible notepad page.
+    var draftNoteText: String {
+        get { draftNotepads.indices.contains(currentNotepadIndex) ? draftNotepads[currentNotepadIndex] : "" }
+        set { setNotepadText(newValue, at: currentNotepadIndex) }
+    }
+
+    /// Updates a specific notepad page's text (used by the paged notepad
+    /// view, which binds each page directly by index) and keeps a trailing
+    /// blank page available to swipe to whenever there's room.
+    func setNotepadText(_ text: String, at index: Int) {
+        guard draftNotepads.indices.contains(index) else { return }
+        draftNotepads[index] = text
+        growTrailingNotepadIfNeeded()
+    }
+
+    private func growTrailingNotepadIfNeeded() {
+        if let last = draftNotepads.last, !last.isEmpty, draftNotepads.count < Self.maxNotepads {
+            draftNotepads.append("")
+        }
+    }
+
+    /// Clears the current notepad's text, stashing the previous text so it
+    /// can be restored with `undoDraftNoteTextClear()`.
+    func clearDraftNoteText() {
+        draftNoteTextUndoBuffer = draftNoteText
+        draftNoteText = ""
+    }
+
+    func undoDraftNoteTextClear() {
+        guard let previous = draftNoteTextUndoBuffer else { return }
+        draftNoteText = previous
+        draftNoteTextUndoBuffer = nil
+    }
+
+    /// Called once a notepad's text has been turned into a goal/penalty
+    /// entry: removes that notepad so the rest shift up, unless it's the
+    /// only one left, in which case it just resets to blank for the next
+    /// note.
+    func consumeDraftNotepad() {
+        if draftNotepads.count > 1 {
+            draftNotepads.remove(at: currentNotepadIndex)
+            currentNotepadIndex = min(currentNotepadIndex, draftNotepads.count - 1)
+        } else {
+            draftNotepads[0] = ""
+        }
+        draftNoteTextUndoBuffer = nil
+        growTrailingNotepadIfNeeded()
+    }
 
     // MARK: - Shots
 
@@ -35,12 +116,10 @@ final class GameState: ObservableObject {
 
     func addGoal(_ goal: GoalEntry) {
         goals.append(goal)
-        goals.sort { ($0.period, $0.time.elapsedSeconds) < ($1.period, $1.time.elapsedSeconds) }
     }
 
     func addPenalty(_ penalty: PenaltyEntry) {
         penalties.append(penalty)
-        penalties.sort { ($0.period, $0.time.elapsedSeconds) < ($1.period, $1.time.elapsedSeconds) }
     }
 
     func addGeneralNote(_ note: GeneralNote) {
@@ -63,74 +142,61 @@ final class GameState: ObservableObject {
         penalties.filter { $0.team == team && (period == nil || $0.period == period) }.count
     }
 
-    // MARK: - Strength calculation
+    // MARK: - Gamesheets
 
-    /// Skaters on the ice for a team at a given moment, floored at 3.
-    private func skaterCount(for team: TeamSide, period: GamePeriod, elapsedSeconds: Int) -> Int {
-        let active = penalties.filter {
-            $0.team == team && $0.period == period && $0.isActive(at: elapsedSeconds)
-        }.count
-        return max(3, 5 - active)
+    var reportTitle: String {
+        "\(teamNames[.home] ?? TeamSide.home.defaultName) Vs \(teamNames[.away] ?? TeamSide.away.defaultName)"
     }
 
-    func strength(for goal: GoalEntry) -> GoalStrength {
-        let opponent: TeamSide = goal.team == .home ? .away : .home
-        let scoringSkaters = skaterCount(for: goal.team, period: goal.period, elapsedSeconds: goal.time.elapsedSeconds)
-        let opponentSkaters = skaterCount(for: opponent, period: goal.period, elapsedSeconds: goal.time.elapsedSeconds)
-        if scoringSkaters > opponentSkaters {
-            return .powerPlay
-        } else if scoringSkaters < opponentSkaters {
-            return .shortHanded
-        } else {
-            return .evenStrength
+    /// Clears everything back to a blank game, ready for a fresh gamesheet.
+    func reset() {
+        teamNames = [.home: "Home", .away: "Away"]
+        currentPeriod = .first
+        shots = [.home: [:], .away: [:]]
+        goals = []
+        penalties = []
+        generalNotes = []
+        goaltenderNotes = [.home: "", .away: ""]
+        draftNotepads = [""]
+        currentNotepadIndex = 0
+        draftNoteTextUndoBuffer = nil
+        currentSheetID = nil
+        colorsSwapped = false
+    }
+
+    /// Swaps which physical side is "home" vs "away" across every piece of
+    /// recorded data, so the two team columns trade places everywhere they
+    /// appear (main entry screen and report alike), and swaps each team's
+    /// accent color along with it.
+    func flipSides() {
+        teamNames = Dictionary(uniqueKeysWithValues: teamNames.map { (side, name) in (side.opposite, name) })
+        shots = Dictionary(uniqueKeysWithValues: shots.map { (side, counts) in (side.opposite, counts) })
+        goals = goals.map { goal in
+            var flipped = goal
+            flipped.team = flipped.team.opposite
+            return flipped
         }
-    }
-
-    func goals(for team: TeamSide, period: GamePeriod, strength: GoalStrength) -> Int {
-        goals.filter { $0.team == team && $0.period == period && self.strength(for: $0) == strength }.count
-    }
-
-    func goals(for team: TeamSide, strength: GoalStrength) -> Int {
-        goals.filter { $0.team == team && self.strength(for: $0) == strength }.count
-    }
-
-    // MARK: - Export
-
-    /// A plain-text log of every submitted note, formatted for pasting into
-    /// another app (e.g. a stats sheet or league messaging app).
-    var fullNotesText: String {
-        var lines: [String] = []
-        lines.append("\(teamNames[.home] ?? "Home") vs \(teamNames[.away] ?? "Away")")
-        lines.append("")
-
-        for period in GamePeriod.allCases {
-            let periodGoals = goals.filter { $0.period == period }
-            let periodPenalties = penalties.filter { $0.period == period }
-            let periodGeneral = generalNotes.filter { $0.period == period }
-            guard !(periodGoals.isEmpty && periodPenalties.isEmpty && periodGeneral.isEmpty) else { continue }
-
-            lines.append("== \(period.fullLabel) ==")
-            for goal in periodGoals.sorted(by: { $0.time.elapsedSeconds < $1.time.elapsedSeconds }) {
-                let team = teamNames[goal.team] ?? goal.team.defaultName
-                var line = "GOAL (\(strength(for: goal).abbreviation)) - \(team) - #\(goal.playerNumber) - \(goal.time.displayString)"
-                if !goal.assist.isEmpty {
-                    line += " - Assist: \(goal.assist)"
-                }
-                lines.append(line)
-            }
-            for penalty in periodPenalties.sorted(by: { $0.time.elapsedSeconds < $1.time.elapsedSeconds }) {
-                let team = teamNames[penalty.team] ?? penalty.team.defaultName
-                lines.append("PENALTY - \(team) - #\(penalty.playerNumber) - \(penalty.infraction) (\(penalty.type.shortLabel)) - \(penalty.time.displayString)")
-            }
-            for note in periodGeneral.sorted(by: { $0.createdAt < $1.createdAt }) {
-                lines.append("NOTE - \(note.text)")
-            }
-            lines.append("")
+        penalties = penalties.map { penalty in
+            var flipped = penalty
+            flipped.team = flipped.team.opposite
+            return flipped
         }
+        goaltenderNotes = Dictionary(uniqueKeysWithValues: goaltenderNotes.map { (side, notes) in (side.opposite, notes) })
+        colorsSwapped.toggle()
+    }
 
-        lines.append("Final Shots: \(teamNames[.home] ?? "Home") \(shotTotal(for: .home)) - \(teamNames[.away] ?? "Away") \(shotTotal(for: .away))")
-        lines.append("Final Score: \(teamNames[.home] ?? "Home") \(goalCount(for: .home)) - \(teamNames[.away] ?? "Away") \(goalCount(for: .away))")
-
-        return lines.joined(separator: "\n")
+    func loadGameSheet(_ sheet: GameSheet) {
+        teamNames = sheet.teamNames
+        shots = sheet.shots
+        goals = sheet.goals
+        penalties = sheet.penalties
+        generalNotes = sheet.generalNotes
+        goaltenderNotes = sheet.goaltenderNotes
+        currentPeriod = sheet.currentPeriod
+        draftNotepads = [""]
+        currentNotepadIndex = 0
+        draftNoteTextUndoBuffer = nil
+        currentSheetID = sheet.id
+        colorsSwapped = false
     }
 }

@@ -1,12 +1,49 @@
 import SwiftUI
 
 struct TopSectionView: View {
-    @Binding var context: NoteContext
+    @EnvironmentObject var gameState: GameState
 
     var body: some View {
-        HStack(spacing: 16) {
-            TeamPanelView(team: .home, context: $context)
-            TeamPanelView(team: .away, context: $context)
+        VStack(spacing: 10) {
+            ZStack {
+                HStack(spacing: 16) {
+                    TeamNameField(team: .home)
+                    TeamNameField(team: .away)
+                }
+
+                scoreContainer
+            }
+
+            HStack(spacing: 16) {
+                TeamPanelView(team: .home)
+                TeamPanelView(team: .away)
+            }
         }
+    }
+
+    private var scoreContainer: some View {
+        HStack(spacing: 8) {
+            scoreNumber(for: .home)
+
+            Text("Score")
+                .font(AppTypography.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .fixedSize()
+
+            scoreNumber(for: .away)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .frame(width: 140)
+        .background(Color.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func scoreNumber(for team: TeamSide) -> some View {
+        Text("\(gameState.goalCount(for: team))")
+            .font(AppTypography.teamName)
+            .foregroundStyle(gameState.accentColor(for: team))
+            .frame(width: 32, alignment: .center)
     }
 }

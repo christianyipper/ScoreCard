@@ -9,17 +9,71 @@ enum MainViewMode: String, CaseIterable, Identifiable {
 
 struct NavSectionView: View {
     @EnvironmentObject var gameState: GameState
+    @EnvironmentObject var gameSheetStore: GameSheetStore
     @Binding var viewMode: MainViewMode
+
+    @State private var isResetConfirmationPresented = false
 
     var body: some View {
         HStack(spacing: 20) {
-            Picker("Period", selection: $gameState.currentPeriod) {
-                ForEach(GamePeriod.allCases) { period in
-                    Text(period.label).tag(period)
+            HStack(spacing: 6) {
+                if viewMode == .notes {
+                    Button(role: .destructive) {
+                        gameState.clearDraftNoteText()
+                    } label: {
+                        Label("Clear", systemImage: "trash")
+                            .lineLimit(1)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(gameState.draftNoteText.isEmpty)
+
+                    Button {
+                        gameState.undoDraftNoteTextClear()
+                    } label: {
+                        Label("Undo", systemImage: "arrow.uturn.backward")
+                            .lineLimit(1)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(!gameState.canUndoDraftNoteText)
+
+                    Button {
+                        if !gameState.draftNoteText.isEmpty {
+                            gameState.draftNoteText.removeLast()
+                        }
+                    } label: {
+                        Label("Back", systemImage: "delete.left")
+                            .lineLimit(1)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(gameState.draftNoteText.isEmpty)
+                } else {
+                    Button {
+                        gameState.flipSides()
+                    } label: {
+                        Label("Flip", systemImage: "arrow.left.arrow.right")
+                            .lineLimit(1)
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button {
+                        gameSheetStore.save(gameState)
+                    } label: {
+                        Label("Save", systemImage: "square.and.arrow.down")
+                            .lineLimit(1)
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button(role: .destructive) {
+                        isResetConfirmationPresented = true
+                    } label: {
+                        Label("Reset", systemImage: "arrow.counterclockwise")
+                            .lineLimit(1)
+                    }
+                    .buttonStyle(.bordered)
                 }
             }
-            .pickerStyle(.segmented)
-            .frame(width: 260)
+            .controlSize(.small)
+            .frame(width: 320, alignment: .leading)
 
             Spacer()
 
@@ -32,5 +86,45 @@ struct NavSectionView: View {
             .frame(width: 220)
         }
         .padding(.vertical, 4)
+        .overlay(alignment: .center) {
+            periodPicker
+        }
+        .confirmationDialog(
+            "Reset this gamesheet?",
+            isPresented: $isResetConfirmationPresented,
+            titleVisibility: .visible
+        ) {
+            Button("Reset", role: .destructive) {
+                gameState.reset()
+            }
+        } message: {
+            Text("This clears all shots, goals, and penalties. This can't be undone.")
+        }
+    }
+
+    private var periodPicker: some View {
+        HStack(spacing: 2) {
+            ForEach(GamePeriod.allCases) { period in
+                let isSelected = gameState.currentPeriod == period
+                Button {
+                    gameState.currentPeriod = period
+                } label: {
+                    Text(period.label)
+                        .font(.subheadline.bold())
+                        .foregroundStyle(isSelected ? Color.white : Color.primary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(isSelected ? Color.blue : Color.clear)
+                        )
+                }
+                .buttonStyle(.squish)
+            }
+        }
+        .padding(2)
+        .background(Color(uiColor: .systemGray5))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .frame(width: 240)
     }
 }

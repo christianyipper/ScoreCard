@@ -2,12 +2,14 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var gameState = GameState()
-    @State private var context: NoteContext = .general
-    @State private var viewMode: MainViewMode = .notes
+    @StateObject private var gameSheetStore = GameSheetStore()
+    @StateObject private var themeManager = ThemeManager()
+    @State private var viewMode: MainViewMode = .report
+    @State private var isGameSheetListPresented = false
 
     var body: some View {
         VStack(spacing: 12) {
-            TopSectionView(context: $context)
+            TopSectionView()
 
             Divider()
 
@@ -17,7 +19,7 @@ struct ContentView: View {
 
             Group {
                 if viewMode == .notes {
-                    NotesView(context: $context)
+                    NotesView()
                 } else {
                     ReportView()
                 }
@@ -25,12 +27,52 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .padding()
-        .environmentObject(gameState)
-        .onChange(of: context) { _, newValue in
-            if newValue != .general {
-                viewMode = .notes
+        .font(AppTypography.body)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.appBackground)
+        .overlay(alignment: .topTrailing) {
+            HStack(spacing: 8) {
+                themeToggleButton
+                hamburgerButton
             }
         }
+        .environmentObject(gameState)
+        .environmentObject(gameSheetStore)
+        .sheet(isPresented: $isGameSheetListPresented) {
+            GameSheetListView()
+                .environmentObject(gameState)
+                .environmentObject(gameSheetStore)
+        }
+        .preferredColorScheme(themeManager.isDarkMode ? .dark : .light)
+    }
+
+    private var hamburgerButton: some View {
+        Button {
+            isGameSheetListPresented = true
+        } label: {
+            Image(systemName: "line.3.horizontal")
+                .font(.title2)
+                .foregroundStyle(.primary)
+                .padding(10)
+                .background(Color.cardBackground, in: Circle())
+        }
+        .buttonStyle(.squish)
+        .padding(8)
+    }
+
+    private var themeToggleButton: some View {
+        Button {
+            themeManager.isDarkMode.toggle()
+        } label: {
+            Image(systemName: themeManager.isDarkMode ? "moon.fill" : "sun.max.fill")
+                .font(.title2)
+                .foregroundStyle(.primary)
+                .padding(10)
+                .background(Color.cardBackground, in: Circle())
+        }
+        .buttonStyle(.squish)
+        .padding(.vertical, 8)
+        .padding(.leading, 8)
     }
 }
 
