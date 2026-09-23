@@ -1,5 +1,11 @@
 import SwiftUI
 
+/// One goal or penalty line in the report's per-period grid.
+private struct ReportEvent: Identifiable {
+    let id: UUID
+    let text: String
+}
+
 struct ReportView: View {
     @EnvironmentObject var gameState: GameState
 
@@ -12,7 +18,6 @@ struct ReportView: View {
                     eventLog(for: .home)
                     eventLog(for: .away)
                 }
-                goaltendersSection
             }
             .padding()
         }
@@ -58,8 +63,8 @@ struct ReportView: View {
             ForEach(GamePeriod.allCases) { period in
                 eventRow(
                     period: period,
-                    homeTexts: gameState.penalties.filter { $0.team == .home && $0.period == period }.map(\.displayText),
-                    awayTexts: gameState.penalties.filter { $0.team == .away && $0.period == period }.map(\.displayText)
+                    home: gameState.penalties.filter { $0.team == .home && $0.period == period }.map { ReportEvent(id: $0.id, text: $0.displayText) },
+                    away: gameState.penalties.filter { $0.team == .away && $0.period == period }.map { ReportEvent(id: $0.id, text: $0.displayText) }
                 )
             }
             statRow(
@@ -73,8 +78,8 @@ struct ReportView: View {
             ForEach(GamePeriod.allCases) { period in
                 eventRow(
                     period: period,
-                    homeTexts: gameState.goals.filter { $0.team == .home && $0.period == period }.map(\.text),
-                    awayTexts: gameState.goals.filter { $0.team == .away && $0.period == period }.map(\.text)
+                    home: gameState.goals.filter { $0.team == .home && $0.period == period }.map { ReportEvent(id: $0.id, text: $0.text) },
+                    away: gameState.goals.filter { $0.team == .away && $0.period == period }.map { ReportEvent(id: $0.id, text: $0.text) }
                 )
             }
             statRow(
@@ -83,9 +88,23 @@ struct ReportView: View {
                 away: "\(gameState.goalCount(for: .away))",
                 emphasized: true
             )
+
+            gridSectionTitle("Goaltenders")
+            ForEach(GoaltenderField.allCases, id: \.self) { field in
+                statRow(
+                    label: field.placeholder,
+                    home: goaltenderValue(.home, field),
+                    away: goaltenderValue(.away, field)
+                )
+            }
         }
         .background(Color.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func goaltenderValue(_ team: TeamSide, _ field: GoaltenderField) -> String {
+        let value = gameState.goaltenderDraft(for: team).display(field)
+        return value.isEmpty ? "–" : value
     }
 
     private func gridSectionTitle(_ title: String) -> some View {
@@ -117,27 +136,34 @@ struct ReportView: View {
         .background(emphasized ? Color.primary.opacity(0.05) : Color.clear)
     }
 
-    private func eventRow(period: GamePeriod, homeTexts: [String], awayTexts: [String]) -> some View {
+    private func eventRow(period: GamePeriod, home: [ReportEvent], away: [ReportEvent]) -> some View {
         HStack(alignment: .top) {
-            eventColumn(texts: homeTexts, color: gameState.accentColor(for: .home), alignment: .leading)
+            eventColumn(events: home, color: gameState.accentColor(for: .home), alignment: .leading)
             Text(period.fullLabel)
                 .font(AppTypography.body)
                 .frame(width: 110, alignment: .center)
-            eventColumn(texts: awayTexts, color: gameState.accentColor(for: .away), alignment: .trailing)
+            eventColumn(events: away, color: gameState.accentColor(for: .away), alignment: .trailing)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
     }
 
-    private func eventColumn(texts: [String], color: Color, alignment: HorizontalAlignment) -> some View {
+    /// Tapping an entry turns its text green; tapping again restores the
+    /// team color.
+    private func eventColumn(events: [ReportEvent], color: Color, alignment: HorizontalAlignment) -> some View {
         VStack(alignment: alignment, spacing: 2) {
-            if texts.isEmpty {
+            if events.isEmpty {
                 Text("–")
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(Array(texts.enumerated()), id: \.offset) { _, text in
-                    Text(text.isEmpty ? "•" : text)
+                ForEach(events) { event in
+                    Text(event.text.isEmpty ? "•" : event.text)
                         .fontWeight(.bold)
+                        .foregroundStyle(gameState.highlightedEventIDs.contains(event.id) ? Color.green : color)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            gameState.toggleEventHighlight(event.id)
+                        }
                 }
             }
         }
@@ -179,47 +205,6 @@ struct ReportView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
-    private var goaltendersSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Goaltenders")
-                .font(AppTypography.body.bold())
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .center)
-
-            HStack(alignment: .top, spacing: 16) {
-                goaltenderCard(for: .home)
-                goaltenderCard(for: .away)
-            }
-        }
-    }
-
-    private func goaltenderCard(for team: TeamSide) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(gameState.teamNames[team] ?? team.defaultName)
-                .font(.headline)
-                .foregroundStyle(gameState.accentColor(for: team))
-
-            TextEditor(text: goaltenderNotesBinding(for: team))
-                .font(AppTypography.body)
-                .scrollContentBackground(.hidden)
-                .frame(minHeight: 80)
-                .padding(6)
-                .background(Color(uiColor: .tertiarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-        }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-
-    private func goaltenderNotesBinding(for team: TeamSide) -> Binding<String> {
-        Binding(
-            get: { gameState.goaltenderNotes[team] ?? "" },
-            set: { gameState.goaltenderNotes[team] = $0 }
-        )
-    }
-
     private func goalRow(_ goal: Binding<GoalEntry>) -> some View {
         HStack(spacing: 6) {
             Text("⭐️")
@@ -239,13 +224,19 @@ struct ReportView: View {
     private func penaltyRow(_ penalty: Binding<PenaltyEntry>) -> some View {
         HStack(spacing: 6) {
             Text("⚠️")
-            if !penalty.wrappedValue.types.isEmpty {
-                Text(penalty.wrappedValue.types.map(\.label).joined(separator: " + "))
+            if penalty.wrappedValue.infraction != nil {
+                Text(penalty.wrappedValue.displayText)
                     .fontWeight(.bold)
-                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                TextField("Penalty note", text: penalty.text)
+                    .textFieldStyle(.roundedBorder)
+                if !penalty.wrappedValue.types.isEmpty {
+                    Text(penalty.wrappedValue.types.map(\.label).joined(separator: " + "))
+                        .fontWeight(.bold)
+                        .foregroundStyle(.secondary)
+                }
             }
-            TextField("Penalty note", text: penalty.text)
-                .textFieldStyle(.roundedBorder)
             Button(role: .destructive) {
                 gameState.deletePenalty(penalty.wrappedValue)
             } label: {

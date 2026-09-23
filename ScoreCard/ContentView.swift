@@ -18,8 +18,8 @@ struct ContentView: View {
             Divider()
 
             Group {
-                if viewMode == .notes {
-                    NotesView()
+                if viewMode == .penalties {
+                    PenaltyEntryView()
                 } else {
                     ReportView()
                 }
@@ -38,6 +38,13 @@ struct ContentView: View {
         }
         .environmentObject(gameState)
         .environmentObject(gameSheetStore)
+        // The numpad that fills the goal fields lives on the Penalties tab.
+        .onChange(of: gameState.activeGoalField) { _, field in
+            if field != nil { viewMode = .penalties }
+        }
+        .onChange(of: gameState.activeGoaltenderField) { _, field in
+            if field != nil { viewMode = .penalties }
+        }
         .sheet(isPresented: $isGameSheetListPresented) {
             GameSheetListView()
                 .environmentObject(gameState)

@@ -19,6 +19,7 @@
 		FDCD6D24C3CB85A15E92BD3C /* GameSheetListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3966ECA80DCFC14CBB31FF53 /* GameSheetListView.swift */; };
 		82E074EF219843DFBE79C276 /* ScoreCardApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81EAEB2346DF4A038CEB6AB7 /* ScoreCardApp.swift */; };
 		83C9CEB3F20A44ABA7169F9D /* NavSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13FA4517D1B84F029586806B /* NavSectionView.swift */; };
+		A1B2C3D4E5F60718293A4B5C /* PenaltyEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5D /* PenaltyEntryView.swift */; };
 		9F0235BC45504987BC4AEA19 /* NotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B12287A264D4AF0866E2655 /* NotesView.swift */; };
 /* End PBXBuildFile section */
 
@@ -32,6 +33,7 @@
 		5D19480109084F23907E23D7 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		65792492B8D044DC95C5D183 /* GameModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameModels.swift; sourceTree = "<group>"; };
 		65D7E6856DAC4DF799A39791 /* ReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5D /* PenaltyEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PenaltyEntryView.swift; sourceTree = "<group>"; };
 		7B12287A264D4AF0866E2655 /* NotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesView.swift; sourceTree = "<group>"; };
 		81EAEB2346DF4A038CEB6AB7 /* ScoreCardApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoreCardApp.swift; sourceTree = "<group>"; };
 		BA4E414A6B0644128444B64D /* GameState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameState.swift; sourceTree = "<group>"; };
@@ -90,6 +92,7 @@
 				075FAF8E341446EB9FBDD7BF /* Top */,
 				E2F1F985F5EA4025A7A88A95 /* Nav */,
 				9FCA939318D14DAD979469B3 /* Notes */,
+				A1B2C3D4E5F60718293A4B5E /* Penalty */,
 				3E0FDFEE9D9A4DD396B2FA2E /* Report */,
 				052E618E082B6C295E00E978 /* GameSheets */,
 			);
@@ -112,6 +115,14 @@
 				2CC5DBF5E3CD0B3F6C929D25 /* GameSheetStore.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60718293A4B5E /* Penalty */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60718293A4B5D /* PenaltyEntryView.swift */,
+			);
+			path = Penalty;
 			sourceTree = "<group>";
 		};
 		9FCA939318D14DAD979469B3 /* Notes */ = {
@@ -220,6 +231,7 @@
 				2101DACD12564C8A8DE26535 /* TopSectionView.swift in Sources */,
 				83C9CEB3F20A44ABA7169F9D /* NavSectionView.swift in Sources */,
 				9F0235BC45504987BC4AEA19 /* NotesView.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5C /* PenaltyEntryView.swift in Sources */,
 				38C77834845444ED9F0CF8B2 /* ReportView.swift in Sources */,
 				5300DBAD6DED36B5CBA56EC8 /* GameSheetStore.swift in Sources */,
 				FDCD6D24C3CB85A15E92BD3C /* GameSheetListView.swift in Sources */,
@@ -300,6 +312,7 @@
 				DEVELOPMENT_TEAM = ZT4SVFV262;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = GamesheetPal;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
@@ -382,6 +395,7 @@
 				DEVELOPMENT_TEAM = ZT4SVFV262;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = GamesheetPal;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;

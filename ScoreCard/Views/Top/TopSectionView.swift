@@ -5,17 +5,17 @@ struct TopSectionView: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            ZStack {
-                HStack(spacing: 16) {
-                    TeamNameField(team: .home)
-                    TeamNameField(team: .away)
-                }
-
+            HStack(spacing: 16) {
+                TeamNameField(team: .home)
                 scoreContainer
+                    .frame(width: AppLayout.centerColumnWidth)
+                TeamNameField(team: .away)
             }
 
             HStack(spacing: 16) {
                 TeamPanelView(team: .home)
+                GoaltenderPanelView()
+                    .frame(width: AppLayout.centerColumnWidth)
                 TeamPanelView(team: .away)
             }
         }

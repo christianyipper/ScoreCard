@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum MainViewMode: String, CaseIterable, Identifiable {
-    case notes = "Notes"
+    case penalties = "Penalties"
     case report = "Report"
 
     var id: String { rawValue }
@@ -14,10 +14,14 @@ struct NavSectionView: View {
 
     @State private var isResetConfirmationPresented = false
 
+    /// The free-text notepad has been replaced by the penalty-entry screen;
+    /// flip this back on to restore its Clear/Undo/Back controls.
+    private let notepadEnabled = false
+
     var body: some View {
         HStack(spacing: 20) {
             HStack(spacing: 6) {
-                if viewMode == .notes {
+                if notepadEnabled {
                     Button(role: .destructive) {
                         gameState.clearDraftNoteText()
                     } label: {
@@ -25,7 +29,7 @@ struct NavSectionView: View {
                             .lineLimit(1)
                     }
                     .buttonStyle(.bordered)
-                    .disabled(gameState.draftNoteText.isEmpty)
+                    .disabled(gameState.isDraftNoteTextEmpty)
 
                     Button {
                         gameState.undoDraftNoteTextClear()
@@ -37,15 +41,13 @@ struct NavSectionView: View {
                     .disabled(!gameState.canUndoDraftNoteText)
 
                     Button {
-                        if !gameState.draftNoteText.isEmpty {
-                            gameState.draftNoteText.removeLast()
-                        }
+                        gameState.backspaceDraftNoteText()
                     } label: {
                         Label("Back", systemImage: "delete.left")
                             .lineLimit(1)
                     }
                     .buttonStyle(.bordered)
-                    .disabled(gameState.draftNoteText.isEmpty)
+                    .disabled(!gameState.canBackspaceDraftNoteText)
                 } else {
                     Button {
                         gameState.flipSides()
@@ -87,7 +89,7 @@ struct NavSectionView: View {
         }
         .padding(.vertical, 4)
         .overlay(alignment: .center) {
-            periodPicker
+            PeriodPickerView()
         }
         .confirmationDialog(
             "Reset this gamesheet?",
@@ -101,8 +103,12 @@ struct NavSectionView: View {
             Text("This clears all shots, goals, and penalties. This can't be undone.")
         }
     }
+}
 
-    private var periodPicker: some View {
+struct PeriodPickerView: View {
+    @EnvironmentObject var gameState: GameState
+
+    var body: some View {
         HStack(spacing: 2) {
             ForEach(GamePeriod.allCases) { period in
                 let isSelected = gameState.currentPeriod == period

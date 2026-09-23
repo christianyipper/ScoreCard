@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The team name field lives outside `TeamPanelView` so the header row (which
 /// also holds the score box between the two teams) can be laid out
-/// separately from the shots/goal/penalty columns below — otherwise the
+/// separately from the shots/goal columns below — otherwise the
 /// score box's width pushes those columns apart.
 struct TeamNameField: View {
     @EnvironmentObject var gameState: GameState
@@ -26,121 +26,95 @@ struct TeamNameField: View {
     }
 }
 
-struct TeamPanelView: View {
+/// The middle column of the top section: a Home and an Away column, each
+/// with individually selectable Starter, Backup and Time inputs. Both columns
+/// use the same row heights so each input lines up across them. Filled from
+/// the numpad on the Penalties tab.
+struct GoaltenderPanelView: View {
     @EnvironmentObject var gameState: GameState
-    let team: TeamSide
-
-    @State private var isPenaltyTypePickerVisible = false
-    @State private var selectedPenaltyTypes: Set<PenaltyType> = []
-
-    private var accent: Color { gameState.accentColor(for: team) }
-
-    private var actionButtonHeight: CGFloat {
-        UIFont.preferredFont(forTextStyle: .body).lineHeight + 16 * 2
-    }
 
     var body: some View {
         VStack(spacing: 10) {
-            VStack(spacing: 10) {
-                container {
-                    shotsRow
-                }
+            Text("Goaltenders")
+                .font(AppTypography.body.bold())
+                .foregroundStyle(.secondary)
 
-                container {
-                    HStack(spacing: 10) {
-                        goalButton(label: "Goal", prefix: "")
-                        outlinedGoalButton(label: "PP Goal", prefix: "PP", color: .green)
-                        outlinedGoalButton(label: "SH Goal", prefix: "SH", color: .orange)
-                    }
-                }
+            HStack(spacing: 8) {
+                column(for: .home)
+                column(for: .away)
             }
-            // An overlay is exactly as tall as the view it's attached to, so
-            // the dropdown covers the shots + goal-buttons cards precisely —
-            // no manual height measurement needed. Add Penalty stays outside
-            // this group, so it's never covered.
-            .overlay {
-                if isPenaltyTypePickerVisible {
-                    penaltyTypePicker
-                }
-            }
-
-            addPenaltyButton
         }
+        .padding(AppLayout.sectionPadding)
         .frame(maxWidth: .infinity)
-    }
-
-    @ViewBuilder
-    private var addPenaltyButton: some View {
-        if selectedPenaltyTypes.isEmpty {
-            actionButton(
-                fill: isPenaltyTypePickerVisible ? Color.orange.opacity(0.1) : nil,
-                borderColor: isPenaltyTypePickerVisible ? .orange : .red
-            ) {
-                withAnimation {
-                    isPenaltyTypePickerVisible.toggle()
-                }
-            } label: {
-                Label(isPenaltyTypePickerVisible ? "Select Penalty" : "Add Penalty", systemImage: "exclamationmark.triangle.fill")
-                    .fontWeight(.bold)
-                    .foregroundStyle(isPenaltyTypePickerVisible ? .orange : .red)
-            }
-        } else {
-            actionButton(fill: .red) {
-                addPenalty()
-            } label: {
-                Label("Add Penalty", systemImage: "exclamationmark.triangle.fill")
-                    .fontWeight(.bold)
-                    .foregroundStyle(.white)
-            }
-        }
-    }
-
-    private var penaltyTypePicker: some View {
-        VStack(spacing: 8) {
-            ForEach(PenaltyTypeRow.allCases, id: \.self) { row in
-                HStack(spacing: 8) {
-                    ForEach(row.types) { type in
-                        penaltyTypeToggle(type)
-                    }
-                }
-                .frame(maxHeight: .infinity)
-            }
-        }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(height: AppLayout.teamPanelHeight)
         .background(Color.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
-    private func penaltyTypeToggle(_ type: PenaltyType) -> some View {
-        let isSelected = selectedPenaltyTypes.contains(type)
-        return Button {
-            togglePenaltyType(type)
-        } label: {
-            Text(type.label)
-                .fontWeight(.bold)
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(isSelected ? Color.orange : Color.gray)
-                )
+    private func column(for side: TeamSide) -> some View {
+        VStack(spacing: 8) {
+            Text(gameState.teamNames[side] ?? side.defaultName)
+                .font(AppTypography.caption.bold())
+                .foregroundStyle(gameState.accentColor(for: side))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+
+            ForEach(GoaltenderField.allCases, id: \.self) { field in
+                fieldButton(side: side, field: field)
+            }
         }
-        .buttonStyle(.squish)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// Each row is single-select: picking a type clears any other selection
-    /// from the same row, while selections from the other row are left
-    /// alone so they can combine (e.g. Minor + GM).
-    private func togglePenaltyType(_ type: PenaltyType) {
-        if selectedPenaltyTypes.contains(type) {
-            selectedPenaltyTypes.remove(type)
-        } else {
-            if let row = PenaltyTypeRow.allCases.first(where: { $0.types.contains(type) }) {
-                row.types.forEach { selectedPenaltyTypes.remove($0) }
-            }
-            selectedPenaltyTypes.insert(type)
+    private func fieldButton(side: TeamSide, field: GoaltenderField) -> some View {
+        let id = GoaltenderFieldID(side: side, field: field)
+        let value = gameState.goaltenderDraft(for: side).display(field)
+        let isActive = gameState.activeGoaltenderField == id
+        return Button {
+            gameState.selectGoaltenderField(id)
+        } label: {
+            Text(value.isEmpty ? field.placeholder : value)
+                .font(AppTypography.body.weight(value.isEmpty ? .regular : .bold).monospacedDigit())
+                .foregroundStyle(value.isEmpty ? Color.secondary : Color.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.appBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(gameState.accentColor(for: side), lineWidth: isActive ? 3 : 0)
+                )
         }
+        .buttonStyle(.plain)
+    }
+}
+
+struct TeamPanelView: View {
+    @EnvironmentObject var gameState: GameState
+    let team: TeamSide
+
+    private var accent: Color { gameState.accentColor(for: team) }
+
+    private var actionButtonHeight: CGFloat { AppLayout.actionButtonHeight }
+
+    var body: some View {
+        VStack(spacing: AppLayout.sectionSpacing) {
+            container {
+                shotsRow
+            }
+
+            container {
+                HStack(spacing: 10) {
+                    ForEach(GoalStrength.allCases, id: \.self) { strength in
+                        goalStrengthButton(strength)
+                    }
+                }
+
+                goalInputRow
+            }
+        }
+        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder
@@ -148,7 +122,7 @@ struct TeamPanelView: View {
         VStack(spacing: 10) {
             content()
         }
-        .padding()
+        .padding(AppLayout.sectionPadding)
         .frame(maxWidth: .infinity)
         .background(Color.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -156,7 +130,7 @@ struct TeamPanelView: View {
 
     private var goalButtonCornerRadius: CGFloat { 8 }
 
-    /// All the action buttons (Add Goal/Add Penalty/shots/etc.) are drawn
+    /// All the action buttons (Add Goal/shots/etc.) are drawn
     /// manually with `.plain` + an explicit background instead of the
     /// system `.bordered`/`.borderedProminent` styles, which silently add
     /// their own extra content insets — that mismatch is what made the
@@ -184,45 +158,56 @@ struct TeamPanelView: View {
         .buttonStyle(.squish)
     }
 
-    private func goalButton(label: String, prefix: String) -> some View {
-        actionButton(fill: .green) {
-            addGoal(prefix: prefix)
+    /// Outlined in green, filled green with white text while selected.
+    /// Selecting one doesn't add a goal; the Submit button on the Penalties
+    /// tab does.
+    private func goalStrengthButton(_ strength: GoalStrength) -> some View {
+        let isSelected = gameState.goalStrengths[team] == strength
+        return actionButton(fill: isSelected ? .green : nil, borderColor: .green) {
+            gameState.selectGoalStrength(strength, for: team)
         } label: {
-            Text(label)
+            Text(strength.label)
                 .fontWeight(.bold)
-                .foregroundStyle(.white)
+                .foregroundStyle(isSelected ? .white : .green)
         }
     }
 
-    private func outlinedGoalButton(label: String, prefix: String, color: Color) -> some View {
-        actionButton(fill: nil, borderColor: color) {
-            addGoal(prefix: prefix)
+    /// One tappable field holding the scorer and both assists, sized like
+    /// the buttons in the sections above it and outlined in the team's color while active,
+    /// with the field currently being typed into tinted.
+    private var goalInputRow: some View {
+        let draft = gameState.goalDraft(for: team)
+        let activeField = gameState.activeGoalField?.side == team ? gameState.activeGoalField?.field : nil
+        return Button {
+            gameState.selectGoalInput(for: team)
         } label: {
-            Text(label)
-                .fontWeight(.bold)
-                .foregroundStyle(color)
+            HStack(spacing: 8) {
+                ForEach(GoalField.allCases, id: \.self) { field in
+                    let value = draft[field]
+                    Text(value.isEmpty ? field.placeholder : value)
+                        .font(AppTypography.body.weight(value.isEmpty ? .regular : .bold))
+                        .foregroundStyle(value.isEmpty ? Color.secondary : Color.primary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.6)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(activeField == field ? accent.opacity(0.2) : Color.clear)
+                        )
+                }
+            }
+            .padding(.horizontal, 10)
+            .frame(maxWidth: .infinity)
+            .frame(height: actionButtonHeight)
+            .background(Color.appBackground)
+            .clipShape(RoundedRectangle(cornerRadius: goalButtonCornerRadius))
+            .overlay(
+                RoundedRectangle(cornerRadius: goalButtonCornerRadius)
+                    .stroke(accent, lineWidth: activeField != nil ? 3 : 0)
+            )
         }
-    }
-
-    /// Whatever's currently written in the Notes scratchpad becomes the new
-    /// entry's text (prefixed to mark goal strength), then the scratchpad
-    /// clears for the next note.
-    private func addGoal(prefix: String) {
-        let text = [prefix, gameState.draftNoteText]
-            .filter { !$0.isEmpty }
-            .joined(separator: " - ")
-        gameState.addGoal(GoalEntry(team: team, period: gameState.currentPeriod, text: text))
-        gameState.consumeDraftNotepad()
-    }
-
-    private func addPenalty() {
-        let types = PenaltyTypeRow.allCases.flatMap { row in
-            row.types.filter { selectedPenaltyTypes.contains($0) }
-        }
-        gameState.addPenalty(PenaltyEntry(team: team, period: gameState.currentPeriod, types: types, text: gameState.draftNoteText))
-        gameState.consumeDraftNotepad()
-        selectedPenaltyTypes.removeAll()
-        isPenaltyTypePickerVisible = false
+        .buttonStyle(.plain)
     }
 
     private var shotsRow: some View {

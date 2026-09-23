@@ -11,6 +11,28 @@ enum AppTypography {
     static let body = Font.system(size: 18)
 }
 
+enum AppLayout {
+    /// Width of the middle column shared by the top section (goaltenders) and
+    /// the penalty screen (period/numpad) so the two line up.
+    static let centerColumnWidth: CGFloat = 300
+
+    /// Height of a top-section card (shots, goals, scorer): one action
+    /// button plus the card's padding.
+    static let sectionPadding: CGFloat = 16
+    static let sectionSpacing: CGFloat = 10
+    static var actionButtonHeight: CGFloat {
+        UIFont.preferredFont(forTextStyle: .body).lineHeight + 16 * 2
+    }
+    static var sectionHeight: CGFloat { actionButtonHeight + sectionPadding * 2 }
+
+    /// Height of a team panel: the shots card plus the goal card, which
+    /// holds two rows (goal buttons and scorer input); the goaltenders card
+    /// is sized to match.
+    static var teamPanelHeight: CGFloat {
+        sectionHeight * 2 + actionButtonHeight + sectionSpacing * 2
+    }
+}
+
 extension TeamSide {
     var accentColor: Color {
         switch self {
