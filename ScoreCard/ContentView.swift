@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var gameState = GameState()
     @StateObject private var gameSheetStore = GameSheetStore()
+    @StateObject private var rosterStore = RosterStore()
     @StateObject private var themeManager = ThemeManager()
     @State private var viewMode: MainViewMode = .report
     @State private var isGameSheetListPresented = false
@@ -38,6 +39,7 @@ struct ContentView: View {
         }
         .environmentObject(gameState)
         .environmentObject(gameSheetStore)
+        .environmentObject(rosterStore)
         // The numpad that fills the goal fields lives on the Penalties tab.
         .onChange(of: gameState.activeGoalField) { _, field in
             if field != nil { viewMode = .penalties }

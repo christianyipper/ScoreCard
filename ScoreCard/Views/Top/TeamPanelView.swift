@@ -6,6 +6,7 @@ import SwiftUI
 /// score box's width pushes those columns apart.
 struct TeamNameField: View {
     @EnvironmentObject var gameState: GameState
+    @EnvironmentObject var rosterStore: RosterStore
     let team: TeamSide
 
     private var teamNameBinding: Binding<String> {
@@ -18,11 +19,87 @@ struct TeamNameField: View {
     private var defaultHeaderText: String { "\(team.defaultName) Shots" }
 
     var body: some View {
-        TextField(defaultHeaderText, text: teamNameBinding)
-            .font(AppTypography.teamName)
-            .multilineTextAlignment(.center)
-            .textFieldStyle(.plain)
-            .frame(maxWidth: .infinity)
+        HStack(spacing: 8) {
+            TextField(defaultHeaderText, text: teamNameBinding)
+                .font(AppTypography.teamName)
+                .multilineTextAlignment(.center)
+                .textFieldStyle(.plain)
+                .frame(maxWidth: .infinity)
+
+            rosterMenu
+        }
+    }
+
+    /// Picks this side's league team (Division → Team), which fills in the
+    /// name and turns on player lookups for typed jersey numbers.
+    private var rosterMenu: some View {
+        let selectedID = gameState.teamRosters[team]?.id
+        return Menu {
+            ForEach(rosterStore.league?.divisions ?? []) { division in
+                Menu(division.name) {
+                    ForEach(division.teams) { rosterTeam in
+                        Button {
+                            gameState.selectRosterTeam(rosterTeam, for: team)
+                        } label: {
+                            if rosterTeam.id == selectedID {
+                                Label(rosterTeam.name, systemImage: "checkmark")
+                            } else {
+                                Text(rosterTeam.name)
+                            }
+                        }
+                    }
+                }
+            }
+
+            if selectedID != nil {
+                Button("No Roster", role: .destructive) {
+                    gameState.selectRosterTeam(nil, for: team)
+                }
+            }
+
+            Section(rosterStore.league.map { "Updated \($0.updatedAt.formatted(date: .abbreviated, time: .shortened))" } ?? "No rosters downloaded") {
+                Button {
+                    Task { await rosterStore.refresh() }
+                } label: {
+                    Label("Refresh Rosters", systemImage: "arrow.clockwise")
+                }
+                .disabled(rosterStore.isRefreshing)
+            }
+        } label: {
+            Image(systemName: selectedID == nil ? "person.3" : "person.3.fill")
+                .font(.title3)
+                .foregroundStyle(gameState.accentColor(for: team))
+                .padding(8)
+                .background(Color.cardBackground, in: Circle())
+        }
+    }
+}
+
+/// The small line under a typed jersey number: the player's name (plus
+/// season goals where `showsGoals`), or a warning when the number isn't on
+/// the side's roster. Empty when the side has no roster.
+struct PlayerLookupCaption: View {
+    let lookup: PlayerLookup
+    var showsGoals = true
+    var usesSurname = false
+
+    var body: some View {
+        switch lookup {
+        case .noRoster:
+            EmptyView()
+        case .notOnRoster:
+            Text("Not on roster")
+                .font(.caption.bold())
+                .foregroundStyle(.orange)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+        case .player(let player, let seasonGoals):
+            Text("\(usesSurname ? player.surname : player.name)\(showsGoals ? " (\(seasonGoals))" : "")")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+        }
     }
 }
 
@@ -184,13 +261,20 @@ struct TeamPanelView: View {
             HStack(spacing: 8) {
                 ForEach(GoalField.allCases, id: \.self) { field in
                     let value = draft[field]
-                    Text(value.isEmpty ? field.placeholder : value)
-                        .font(AppTypography.body.weight(value.isEmpty ? .regular : .bold))
-                        .foregroundStyle(value.isEmpty ? Color.secondary : Color.primary)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.6)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    VStack(spacing: 0) {
+                        Text(value.isEmpty ? field.placeholder : value)
+                            .font(AppTypography.body.weight(value.isEmpty ? .regular : .bold))
+                            .foregroundStyle(value.isEmpty ? Color.secondary : Color.primary)
+                            .lineLimit(value.isEmpty ? 2 : 1)
+                            .minimumScaleFactor(0.6)
+                            .multilineTextAlignment(.center)
+
+                        if !value.isEmpty {
+                            PlayerLookupCaption(lookup: gameState.lookupPlayer(number: value, side: team))
+                        }
+                    }
+                    .padding(.horizontal, 2)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(
                             RoundedRectangle(cornerRadius: 6)
                                 .fill(activeField == field ? accent.opacity(0.2) : Color.clear)

@@ -16,6 +16,34 @@ final class GameState: ObservableObject {
         (colorsSwapped ? team.opposite : team).accentColor
     }
 
+    /// The league roster picked for each side (see `TeamNameField`), used to
+    /// put names and season goals next to typed jersey numbers.
+    @Published var teamRosters: [TeamSide: RosterTeam] = [:]
+
+    /// Picks `team` as `side`'s roster and names the side after it; nil
+    /// clears the roster and leaves the name as typed.
+    func selectRosterTeam(_ team: RosterTeam?, for side: TeamSide) {
+        teamRosters[side] = team
+        if let team { teamNames[side] = team.name }
+    }
+
+    /// Resolves a jersey number on `side`'s roster. Season goals include
+    /// goals already recorded for that number in this game.
+    func lookupPlayer(number: String, side: TeamSide) -> PlayerLookup {
+        guard let roster = teamRosters[side] else { return .noRoster }
+        guard let player = roster.player(number: number) else { return .notOnRoster }
+        let key = RosterPlayer.normalized(number)
+        let goalsThisGame = goals.filter {
+            $0.team == side && $0.scorer.map(RosterPlayer.normalized) == key
+        }.count
+        return .player(player, seasonGoals: player.goals + goalsThisGame)
+    }
+
+    private func playerName(number: String, side: TeamSide) -> String? {
+        guard !number.isEmpty, let player = teamRosters[side]?.player(number: number) else { return nil }
+        return player.name
+    }
+
     @Published var shots: [TeamSide: [GamePeriod: Int]] = [
         .home: [:],
         .away: [:]
@@ -390,7 +418,8 @@ final class GameState: ObservableObject {
                 time: periodTime,
                 infraction: row.infraction,
                 playerNumber: row.playerNumber,
-                servedBy: row.servedBy.isEmpty ? nil : row.servedBy
+                servedBy: row.servedBy.isEmpty ? nil : row.servedBy,
+                playerName: playerName(number: row.playerNumber, side: side)
             ))
             rows[index] = PenaltyDraftRow()
         }
@@ -406,12 +435,12 @@ final class GameState: ObservableObject {
         let text = [
             periodTime,
             strength.prefix,
-            goalDraft(for: side).summary,
+            goalDraft(for: side).summary { self.playerName(number: $0, side: side) },
             draftNoteText(for: side)
         ]
         .filter { !$0.isEmpty }
         .joined(separator: " ")
-        addGoal(GoalEntry(team: side, period: currentPeriod, text: text))
+        addGoal(GoalEntry(team: side, period: currentPeriod, text: text, scorer: goalDraft(for: side)[.scorer]))
         consumeDraftNote(for: side)
         goalDrafts[side] = GoalDraft()
         goalStrengths[side] = nil
@@ -498,6 +527,7 @@ final class GameState: ObservableObject {
     func reset() {
         highlightedEventIDs = []
         teamNames = [.home: "Home", .away: "Away"]
+        teamRosters = [:]
         currentPeriod = .first
         shots = [.home: [:], .away: [:]]
         goals = []
@@ -518,6 +548,7 @@ final class GameState: ObservableObject {
     /// accent color along with it.
     func flipSides() {
         teamNames = Dictionary(uniqueKeysWithValues: teamNames.map { (side, name) in (side.opposite, name) })
+        teamRosters = Dictionary(uniqueKeysWithValues: teamRosters.map { (side, roster) in (side.opposite, roster) })
         shots = Dictionary(uniqueKeysWithValues: shots.map { (side, counts) in (side.opposite, counts) })
         goals = goals.map { goal in
             var flipped = goal
@@ -544,6 +575,7 @@ final class GameState: ObservableObject {
     func loadGameSheet(_ sheet: GameSheet) {
         highlightedEventIDs = []
         teamNames = sheet.teamNames
+        teamRosters = sheet.teamRosters
         shots = sheet.shots
         goals = sheet.goals
         penalties = sheet.penalties

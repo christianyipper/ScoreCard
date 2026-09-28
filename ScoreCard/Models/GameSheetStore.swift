@@ -29,7 +29,8 @@ final class GameSheetStore: ObservableObject {
             penalties: gameState.penalties,
             generalNotes: gameState.generalNotes,
             currentPeriod: gameState.currentPeriod,
-            goaltenderDrafts: gameState.goaltenderDrafts
+            goaltenderDrafts: gameState.goaltenderDrafts,
+            teamRosters: gameState.teamRosters
         )
         if let index = sheets.firstIndex(where: { $0.id == id }) {
             sheets[index] = sheet

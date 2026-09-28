@@ -53,8 +53,17 @@ struct PenaltyEntryView: View {
             HStack(spacing: 8) {
                 rowField(row.infraction?.label, placeholder: "Infraction")
                 rowField(row.types.isEmpty ? nil : row.types.ordered.map(\.label).joined(separator: " + "), placeholder: "Type")
-                rowField(row.numberDisplay(showsSlash: gameState.isEditingServedBy(id)), placeholder: "#")
-                    .frame(width: 72)
+                VStack(spacing: 0) {
+                    rowField(row.numberDisplay(showsSlash: gameState.isEditingServedBy(id)), placeholder: "#")
+                    if !row.playerNumber.isEmpty {
+                        PlayerLookupCaption(
+                            lookup: gameState.lookupPlayer(number: row.playerNumber, side: side),
+                            showsGoals: false,
+                            usesSurname: true
+                        )
+                    }
+                }
+                .frame(width: 72)
             }
             .padding(.horizontal, 10)
             .frame(maxWidth: .infinity, maxHeight: .infinity)

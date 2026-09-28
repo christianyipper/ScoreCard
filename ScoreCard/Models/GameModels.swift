@@ -249,14 +249,14 @@ struct GoalDraft: Equatable {
 
     var isEmpty: Bool { GoalField.allCases.allSatisfy { self[$0].isEmpty } }
 
-    /// e.g. "(G: 12, A: 5, A: 7)"; empty when no numbers are filled in.
-    var summary: String {
-        let parts = [
-            self[.scorer].isEmpty ? "" : "G: \(self[.scorer])",
-            self[.assist1].isEmpty ? "" : "A: \(self[.assist1])",
-            self[.assist2].isEmpty ? "" : "A: \(self[.assist2])"
-        ]
-        .filter { !$0.isEmpty }
+    /// e.g. "(G: 12 Smith, A: 5 Jones, A: 7)"; empty when no numbers are
+    /// filled in. `name` looks up a number's player name on the roster.
+    func summary(name: (String) -> String? = { _ in nil }) -> String {
+        let parts = [(GoalField.scorer, "G"), (.assist1, "A"), (.assist2, "A")].compactMap { field, prefix -> String? in
+            let number = self[field]
+            guard !number.isEmpty else { return nil }
+            return ["\(prefix): \(number)", name(number)].compactMap { $0 }.joined(separator: " ")
+        }
         return parts.isEmpty ? "" : "(\(parts.joined(separator: ", ")))"
     }
 }
@@ -318,6 +318,8 @@ struct PenaltyEntry: Identifiable, Codable, Equatable {
     var infraction: Infraction?
     var playerNumber: String?
     var servedBy: String?
+    /// The penalized player's name from the team roster, if known.
+    var playerName: String?
 
     init(
         id: UUID = UUID(),
@@ -328,7 +330,8 @@ struct PenaltyEntry: Identifiable, Codable, Equatable {
         time: String? = nil,
         infraction: Infraction? = nil,
         playerNumber: String? = nil,
-        servedBy: String? = nil
+        servedBy: String? = nil,
+        playerName: String? = nil
     ) {
         self.id = id
         self.team = team
@@ -339,10 +342,11 @@ struct PenaltyEntry: Identifiable, Codable, Equatable {
         self.infraction = infraction
         self.playerNumber = playerNumber
         self.servedBy = servedBy
+        self.playerName = playerName
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, team, period, types, text, time, infraction, playerNumber, servedBy
+        case id, team, period, types, text, time, infraction, playerNumber, servedBy, playerName
     }
 
     /// Custom decoding so gamesheets saved before `types` (or the
@@ -360,6 +364,7 @@ struct PenaltyEntry: Identifiable, Codable, Equatable {
         infraction = (try? container.decodeIfPresent(Infraction.self, forKey: .infraction)) ?? nil
         playerNumber = try container.decodeIfPresent(String.self, forKey: .playerNumber)
         servedBy = try container.decodeIfPresent(String.self, forKey: .servedBy)
+        playerName = try container.decodeIfPresent(String.self, forKey: .playerName)
     }
 
     var displayText: String {
@@ -372,6 +377,7 @@ struct PenaltyEntry: Identifiable, Codable, Equatable {
             time ?? "",
             "(\(detail))",
             playerNumber.map { "#\($0)" } ?? "",
+            playerName ?? "",
             servedBy.map { "(Served by #\($0))" } ?? "",
             text
         ]
@@ -385,12 +391,16 @@ struct GoalEntry: Identifiable, Codable, Equatable {
     var team: TeamSide
     var period: GamePeriod
     var text: String
+    /// The scorer's jersey number, used to count this game's goals toward
+    /// the scorer's season total. Nil for goals saved before it existed.
+    var scorer: String?
 
-    init(id: UUID = UUID(), team: TeamSide, period: GamePeriod, text: String = "") {
+    init(id: UUID = UUID(), team: TeamSide, period: GamePeriod, text: String = "", scorer: String? = nil) {
         self.id = id
         self.team = team
         self.period = period
         self.text = text
+        self.scorer = scorer
     }
 }
 
@@ -423,6 +433,9 @@ struct GameSheet: Identifiable, Codable, Equatable {
     var generalNotes: [GeneralNote]
     var currentPeriod: GamePeriod
     var goaltenderDrafts: [TeamSide: GoaltenderDraft]
+    /// The league rosters picked for each side, kept with the sheet so names
+    /// still show when it's reopened after the rosters change.
+    var teamRosters: [TeamSide: RosterTeam]
 
     init(
         id: UUID,
@@ -434,7 +447,8 @@ struct GameSheet: Identifiable, Codable, Equatable {
         penalties: [PenaltyEntry],
         generalNotes: [GeneralNote],
         currentPeriod: GamePeriod,
-        goaltenderDrafts: [TeamSide: GoaltenderDraft]
+        goaltenderDrafts: [TeamSide: GoaltenderDraft],
+        teamRosters: [TeamSide: RosterTeam] = [:]
     ) {
         self.id = id
         self.name = name
@@ -446,14 +460,15 @@ struct GameSheet: Identifiable, Codable, Equatable {
         self.generalNotes = generalNotes
         self.currentPeriod = currentPeriod
         self.goaltenderDrafts = goaltenderDrafts
+        self.teamRosters = teamRosters
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, savedAt, teamNames, shots, goals, penalties, generalNotes, currentPeriod, goaltenderDrafts
+        case id, name, savedAt, teamNames, shots, goals, penalties, generalNotes, currentPeriod, goaltenderDrafts, teamRosters
     }
 
-    /// Custom decoding so gamesheets saved before `goaltenderDrafts` existed
-    /// (which lack that key entirely) still decode instead of failing the
+    /// Custom decoding so gamesheets saved before `goaltenderDrafts` or
+    /// `teamRosters` existed (which lack those keys entirely) still decode instead of failing the
     /// whole saved-gamesheets array.
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -467,5 +482,6 @@ struct GameSheet: Identifiable, Codable, Equatable {
         generalNotes = try container.decode([GeneralNote].self, forKey: .generalNotes)
         currentPeriod = try container.decode(GamePeriod.self, forKey: .currentPeriod)
         goaltenderDrafts = try container.decodeIfPresent([TeamSide: GoaltenderDraft].self, forKey: .goaltenderDrafts) ?? [:]
+        teamRosters = try container.decodeIfPresent([TeamSide: RosterTeam].self, forKey: .teamRosters) ?? [:]
     }
 }
