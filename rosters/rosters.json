@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-28T09:20:35.947Z",
+  "updatedAt": "2026-09-28T17:33:13.915Z",
   "seasonId": 14553,
   "divisions": [
     {
@@ -2139,17 +2139,6 @@
           "gp": 2,
           "players": [
             {
-              "id": 5185094,
-              "number": "",
-              "name": "Oliver Kent",
-              "position": "",
-              "gp": 0,
-              "goals": 0,
-              "assists": 0,
-              "points": 0,
-              "pim": 0
-            },
-            {
               "id": 5104297,
               "number": "2",
               "name": "Jack Kronewitt",
@@ -2254,6 +2243,17 @@
               "name": "Deandre Valencia",
               "position": "G",
               "gp": 2,
+              "goals": 0,
+              "assists": 0,
+              "points": 0,
+              "pim": 0
+            },
+            {
+              "id": 5185094,
+              "number": "43",
+              "name": "Oliver Kent",
+              "position": "D",
+              "gp": 0,
               "goals": 0,
               "assists": 0,
               "points": 0,
@@ -7196,6 +7196,17 @@
           "gp": 3,
           "players": [
             {
+              "id": 5188642,
+              "number": "",
+              "name": "Cohan Sims",
+              "position": "",
+              "gp": 0,
+              "goals": 0,
+              "assists": 0,
+              "points": 0,
+              "pim": 0
+            },
+            {
               "id": 5077264,
               "number": "4",
               "name": "Matthew Vanak",
@@ -9134,7 +9145,7 @@
               "id": 5178119,
               "number": "2",
               "name": "William Keraiff",
-              "position": "",
+              "position": "D",
               "gp": 0,
               "goals": 0,
               "assists": 0,
@@ -9263,17 +9274,6 @@
               "pim": 2
             },
             {
-              "id": 5134902,
-              "number": "22",
-              "name": "Devin Groenenboom",
-              "position": "",
-              "gp": 3,
-              "goals": 1,
-              "assists": 2,
-              "points": 3,
-              "pim": 16
-            },
-            {
               "id": 5076896,
               "number": "25",
               "name": "Bentley McMaster",
@@ -9347,17 +9347,6 @@
           "gp": 1,
           "players": [
             {
-              "id": 5178802,
-              "number": "",
-              "name": "Emeric Barker",
-              "position": "",
-              "gp": 1,
-              "goals": 0,
-              "assists": 0,
-              "points": 0,
-              "pim": 0
-            },
-            {
               "id": 5166780,
               "number": "2",
               "name": "Gabe Bradley",
@@ -9372,6 +9361,17 @@
               "id": 5166769,
               "number": "4",
               "name": "Ethan Elford",
+              "position": "",
+              "gp": 1,
+              "goals": 0,
+              "assists": 0,
+              "points": 0,
+              "pim": 0
+            },
+            {
+              "id": 5178802,
+              "number": "6",
+              "name": "Emeric Barker",
               "position": "",
               "gp": 1,
               "goals": 0,
@@ -11443,17 +11443,6 @@
               "assists": 2,
               "points": 2,
               "pim": 2
-            },
-            {
-              "id": 5083729,
-              "number": "94",
-              "name": "Cohan Sims",
-              "position": "F",
-              "gp": 3,
-              "goals": 1,
-              "assists": 0,
-              "points": 1,
-              "pim": 0
             },
             {
               "id": 5076909,
