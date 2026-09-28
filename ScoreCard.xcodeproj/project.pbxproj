@@ -12,6 +12,7 @@
 		21FA6115F3D94B5F9EF2D6D8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 508FBA53C41940DDB5799A6A /* ContentView.swift */; };
 		37C81E1832DD44C9A2555563 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5A7E12B846ED4866BAA5D069 /* Assets.xcassets */; };
 		38C77834845444ED9F0CF8B2 /* ReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65D7E6856DAC4DF799A39791 /* ReportView.swift */; };
+		5C71A2E09B3D4F6A8E1C2D3F /* ScriptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C71A2E09B3D4F6A8E1C2D40 /* ScriptView.swift */; };
 		416BD3DE409445F19D1758A9 /* GameModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65792492B8D044DC95C5D183 /* GameModels.swift */; };
 		65A26E9C50124CD284CB62AB /* LeagueRoster.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FEBDC72CB1F430B8BFBA215 /* LeagueRoster.swift */; };
 		B497D54099E043008EBE4B2D /* RosterStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DC93FB0B4314359945BCE92 /* RosterStore.swift */; };
@@ -37,6 +38,7 @@
 		5D19480109084F23907E23D7 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		65792492B8D044DC95C5D183 /* GameModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameModels.swift; sourceTree = "<group>"; };
 		65D7E6856DAC4DF799A39791 /* ReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportView.swift; sourceTree = "<group>"; };
+		5C71A2E09B3D4F6A8E1C2D40 /* ScriptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5D /* PenaltyEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PenaltyEntryView.swift; sourceTree = "<group>"; };
 		7B12287A264D4AF0866E2655 /* NotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesView.swift; sourceTree = "<group>"; };
 		81EAEB2346DF4A038CEB6AB7 /* ScoreCardApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoreCardApp.swift; sourceTree = "<group>"; };
@@ -77,6 +79,7 @@
 			isa = PBXGroup;
 			children = (
 				65D7E6856DAC4DF799A39791 /* ReportView.swift */,
+				5C71A2E09B3D4F6A8E1C2D40 /* ScriptView.swift */,
 			);
 			path = Report;
 			sourceTree = "<group>";
@@ -239,6 +242,7 @@
 				9F0235BC45504987BC4AEA19 /* NotesView.swift in Sources */,
 				A1B2C3D4E5F60718293A4B5C /* PenaltyEntryView.swift in Sources */,
 				38C77834845444ED9F0CF8B2 /* ReportView.swift in Sources */,
+				5C71A2E09B3D4F6A8E1C2D3F /* ScriptView.swift in Sources */,
 				5300DBAD6DED36B5CBA56EC8 /* GameSheetStore.swift in Sources */,
 				B497D54099E043008EBE4B2D /* RosterStore.swift in Sources */,
 				65A26E9C50124CD284CB62AB /* LeagueRoster.swift in Sources */,

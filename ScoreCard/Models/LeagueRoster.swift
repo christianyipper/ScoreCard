@@ -6,6 +6,10 @@ struct LeagueData: Codable, Equatable {
     var updatedAt: Date
     var seasonId: Int?
     var divisions: [RosterDivision]
+
+    func team(id: Int) -> RosterTeam? {
+        divisions.lazy.flatMap(\.teams).first { $0.id == id }
+    }
 }
 
 struct RosterDivision: Codable, Equatable, Identifiable {
@@ -17,7 +21,12 @@ struct RosterDivision: Codable, Equatable, Identifiable {
 struct RosterTeam: Codable, Equatable, Identifiable {
     var id: Int
     var name: String
+    /// Games the league has posted for this team. Nil in data scraped
+    /// before it was added.
+    var gp: Int?
     var players: [RosterPlayer]
+
+    var gamesPlayed: Int { gp ?? players.map(\.gp).max() ?? 0 }
 
     /// The player wearing `number`, ignoring leading zeros ("07" matches "7").
     func player(number: String) -> RosterPlayer? {

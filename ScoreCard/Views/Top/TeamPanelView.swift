@@ -9,32 +9,17 @@ struct TeamNameField: View {
     @EnvironmentObject var rosterStore: RosterStore
     let team: TeamSide
 
-    private var teamNameBinding: Binding<String> {
-        Binding(
-            get: { gameState.teamNames[team] ?? defaultHeaderText },
-            set: { gameState.teamNames[team] = $0 }
-        )
-    }
+    @State private var isCustomNamePresented = false
+    @State private var customName = ""
 
-    private var defaultHeaderText: String { "\(team.defaultName) Shots" }
+    private var teamName: String { gameState.teamNames[team] ?? team.defaultName }
 
+    /// The team name is itself the menu for picking this side's league team
+    /// (Division → Team), which fills in the name and turns on player
+    /// lookups for typed jersey numbers. A custom name can still be typed.
     var body: some View {
-        HStack(spacing: 8) {
-            TextField(defaultHeaderText, text: teamNameBinding)
-                .font(AppTypography.teamName)
-                .multilineTextAlignment(.center)
-                .textFieldStyle(.plain)
-                .frame(maxWidth: .infinity)
-
-            rosterMenu
-        }
-    }
-
-    /// Picks this side's league team (Division → Team), which fills in the
-    /// name and turns on player lookups for typed jersey numbers.
-    private var rosterMenu: some View {
         let selectedID = gameState.teamRosters[team]?.id
-        return Menu {
+        Menu {
             ForEach(rosterStore.league?.divisions ?? []) { division in
                 Menu(division.name) {
                     ForEach(division.teams) { rosterTeam in
@@ -51,9 +36,18 @@ struct TeamNameField: View {
                 }
             }
 
-            if selectedID != nil {
-                Button("No Roster", role: .destructive) {
-                    gameState.selectRosterTeam(nil, for: team)
+            Section {
+                Button {
+                    customName = teamName
+                    isCustomNamePresented = true
+                } label: {
+                    Label("Custom Name…", systemImage: "pencil")
+                }
+
+                if selectedID != nil {
+                    Button("No Roster", role: .destructive) {
+                        gameState.selectRosterTeam(nil, for: team)
+                    }
                 }
             }
 
@@ -66,11 +60,28 @@ struct TeamNameField: View {
                 .disabled(rosterStore.isRefreshing)
             }
         } label: {
-            Image(systemName: selectedID == nil ? "person.3" : "person.3.fill")
-                .font(.title3)
-                .foregroundStyle(gameState.accentColor(for: team))
-                .padding(8)
-                .background(Color.cardBackground, in: Circle())
+            HStack(spacing: 6) {
+                Text(teamName)
+                    .font(AppTypography.teamName)
+                    .foregroundStyle(Color.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+
+                Image(systemName: "chevron.down")
+                    .font(.headline)
+                    .foregroundStyle(gameState.accentColor(for: team))
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .alert("\(team.defaultName) Team Name", isPresented: $isCustomNamePresented) {
+            TextField(team.defaultName, text: $customName)
+            Button("Cancel", role: .cancel) {}
+            Button("Save") {
+                let trimmed = customName.trimmingCharacters(in: .whitespaces)
+                gameState.teamNames[team] = trimmed.isEmpty ? team.defaultName : trimmed
+            }
+        } message: {
+            Text("Keeps the current roster, if one is picked.")
         }
     }
 }
@@ -169,6 +180,8 @@ struct GoaltenderPanelView: View {
 
 struct TeamPanelView: View {
     @EnvironmentObject var gameState: GameState
+    @EnvironmentObject var gameSheetStore: GameSheetStore
+    @EnvironmentObject var rosterStore: RosterStore
     let team: TeamSide
 
     private var accent: Color { gameState.accentColor(for: team) }
@@ -270,7 +283,12 @@ struct TeamPanelView: View {
                             .multilineTextAlignment(.center)
 
                         if !value.isEmpty {
-                            PlayerLookupCaption(lookup: gameState.lookupPlayer(number: value, side: team))
+                            PlayerLookupCaption(lookup: gameState.lookupPlayer(
+                                number: value,
+                                side: team,
+                                league: rosterStore.league,
+                                savedSheets: gameSheetStore
+                            ))
                         }
                     }
                     .padding(.horizontal, 2)

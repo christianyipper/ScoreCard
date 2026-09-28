@@ -230,8 +230,8 @@ enum GoalStrength: CaseIterable {
     var prefix: String {
         switch self {
         case .even: return ""
-        case .powerPlay: return "PP"
-        case .shortHanded: return "SH"
+        case .powerPlay: return "Scored on the powerplay"
+        case .shortHanded: return "Scored shorthanded"
         }
     }
 }
@@ -394,13 +394,30 @@ struct GoalEntry: Identifiable, Codable, Equatable {
     /// The scorer's jersey number, used to count this game's goals toward
     /// the scorer's season total. Nil for goals saved before it existed.
     var scorer: String?
+    /// Assist numbers and period time, used by the Script tab. Nil for
+    /// goals saved before they existed.
+    var assist1: String?
+    var assist2: String?
+    var time: String?
 
-    init(id: UUID = UUID(), team: TeamSide, period: GamePeriod, text: String = "", scorer: String? = nil) {
+    init(
+        id: UUID = UUID(),
+        team: TeamSide,
+        period: GamePeriod,
+        text: String = "",
+        scorer: String? = nil,
+        assist1: String? = nil,
+        assist2: String? = nil,
+        time: String? = nil
+    ) {
         self.id = id
         self.team = team
         self.period = period
         self.text = text
         self.scorer = scorer
+        self.assist1 = assist1
+        self.assist2 = assist2
+        self.time = time
     }
 }
 

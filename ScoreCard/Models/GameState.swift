@@ -27,16 +27,52 @@ final class GameState: ObservableObject {
         if let team { teamNames[side] = team.name }
     }
 
-    /// Resolves a jersey number on `side`'s roster. Season goals include
-    /// goals already recorded for that number in this game.
-    func lookupPlayer(number: String, side: TeamSide) -> PlayerLookup {
-        guard let roster = teamRosters[side] else { return .noRoster }
+    /// Resolves a jersey number on `side`'s roster, using `league`'s copy of
+    /// the team when it's newer than the one picked. Season goals include
+    /// goals already recorded for that number in this game, plus those in
+    /// `savedSheets` the league hasn't posted yet.
+    func lookupPlayer(
+        number: String,
+        side: TeamSide,
+        league: LeagueData? = nil,
+        savedSheets: GameSheetStore? = nil
+    ) -> PlayerLookup {
+        guard let picked = teamRosters[side] else { return .noRoster }
+        let roster = league?.team(id: picked.id) ?? picked
         guard let player = roster.player(number: number) else { return .notOnRoster }
         let key = RosterPlayer.normalized(number)
         let goalsThisGame = goals.filter {
             $0.team == side && $0.scorer.map(RosterPlayer.normalized) == key
         }.count
-        return .player(player, seasonGoals: player.goals + goalsThisGame)
+        let unpostedGoals = savedSheets?.unpostedGoals(for: roster, excluding: currentSheetID)[key] ?? 0
+        return .player(player, seasonGoals: player.goals + goalsThisGame + unpostedGoals)
+    }
+
+    /// The player wearing `number` on `side`'s roster, preferring `league`'s
+    /// newer copy of the team.
+    func rosterPlayer(number: String, side: TeamSide, league: LeagueData? = nil) -> RosterPlayer? {
+        guard let picked = teamRosters[side] else { return nil }
+        return (league?.team(id: picked.id) ?? picked).player(number: number)
+    }
+
+    /// Which of the scorer's season goals `goal` was: posted league goals,
+    /// plus unposted saved sheets, plus this game's goals by the scorer up to
+    /// and including this one. Nil when the scorer isn't on the roster.
+    func seasonGoalNumber(
+        for goal: GoalEntry,
+        league: LeagueData? = nil,
+        savedSheets: GameSheetStore? = nil
+    ) -> Int? {
+        guard let picked = teamRosters[goal.team], let scorer = goal.scorer else { return nil }
+        let roster = league?.team(id: picked.id) ?? picked
+        guard let player = roster.player(number: scorer) else { return nil }
+        let key = RosterPlayer.normalized(scorer)
+        guard let index = goals.firstIndex(where: { $0.id == goal.id }) else { return nil }
+        let goalsThisGame = goals[...index].filter {
+            $0.team == goal.team && $0.scorer.map(RosterPlayer.normalized) == key
+        }.count
+        let unpostedGoals = savedSheets?.unpostedGoals(for: roster, excluding: currentSheetID)[key] ?? 0
+        return player.goals + unpostedGoals + goalsThisGame
     }
 
     private func playerName(number: String, side: TeamSide) -> String? {
@@ -440,7 +476,16 @@ final class GameState: ObservableObject {
         ]
         .filter { !$0.isEmpty }
         .joined(separator: " ")
-        addGoal(GoalEntry(team: side, period: currentPeriod, text: text, scorer: goalDraft(for: side)[.scorer]))
+        let draft = goalDraft(for: side)
+        addGoal(GoalEntry(
+            team: side,
+            period: currentPeriod,
+            text: text,
+            scorer: draft[.scorer],
+            assist1: draft[.assist1].isEmpty ? nil : draft[.assist1],
+            assist2: draft[.assist2].isEmpty ? nil : draft[.assist2],
+            time: periodTime
+        ))
         consumeDraftNote(for: side)
         goalDrafts[side] = GoalDraft()
         goalStrengths[side] = nil

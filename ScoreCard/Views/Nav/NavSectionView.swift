@@ -3,6 +3,7 @@ import SwiftUI
 enum MainViewMode: String, CaseIterable, Identifiable {
     case penalties = "Penalties"
     case report = "Report"
+    case script = "Script"
 
     var id: String { rawValue }
 }
@@ -85,7 +86,7 @@ struct NavSectionView: View {
                 }
             }
             .pickerStyle(.segmented)
-            .frame(width: 220)
+            .frame(width: 300)
         }
         .padding(.vertical, 4)
         .overlay(alignment: .center) {

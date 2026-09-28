@@ -19,10 +19,13 @@ struct ContentView: View {
             Divider()
 
             Group {
-                if viewMode == .penalties {
+                switch viewMode {
+                case .penalties:
                     PenaltyEntryView()
-                } else {
+                case .report:
                     ReportView()
+                case .script:
+                    ScriptView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

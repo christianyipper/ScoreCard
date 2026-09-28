@@ -43,6 +43,38 @@ final class GameSheetStore: ObservableObject {
         return sheet
     }
 
+    /// Goals per scorer number (normalized) for `team` from saved gamesheets
+    /// the league hasn't posted yet, so season totals include them until the
+    /// daily roster scrape does.
+    ///
+    /// Each sheet keeps the roster as it was when the team was picked, so its
+    /// games played then tells us which game number the sheet was: one past
+    /// that, or one past the previous saved game if that's later. The league
+    /// has posted it once `team.gamesPlayed` reaches that number. The sheet
+    /// `excluding` (the game currently open) holds its place in that order but
+    /// its goals are left out, since the open game counts its own.
+    func unpostedGoals(for team: RosterTeam, excluding sheetID: UUID?) -> [String: Int] {
+        let games = sheets.compactMap { sheet -> (sheet: GameSheet, side: TeamSide, snapshot: RosterTeam)? in
+            guard let side = TeamSide.allCases.first(where: { sheet.teamRosters[$0]?.id == team.id }),
+                  let snapshot = sheet.teamRosters[side] else { return nil }
+            return (sheet, side, snapshot)
+        }
+        .sorted { $0.sheet.savedAt < $1.sheet.savedAt }
+
+        var counts: [String: Int] = [:]
+        var gameNumber = 0
+        for game in games {
+            gameNumber = max(game.snapshot.gamesPlayed + 1, gameNumber + 1)
+            guard team.gamesPlayed < gameNumber, game.sheet.id != sheetID else { continue }
+            for goal in game.sheet.goals where goal.team == game.side {
+                if let scorer = goal.scorer, !scorer.isEmpty {
+                    counts[RosterPlayer.normalized(scorer), default: 0] += 1
+                }
+            }
+        }
+        return counts
+    }
+
     func delete(_ sheet: GameSheet) {
         sheets.removeAll { $0.id == sheet.id }
         persist()

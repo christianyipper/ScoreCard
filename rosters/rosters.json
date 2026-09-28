@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-28T08:39:30.788Z",
+  "updatedAt": "2026-09-28T09:20:35.947Z",
   "seasonId": 14553,
   "divisions": [
     {
@@ -9,6 +9,7 @@
         {
           "id": 398202,
           "name": "Bow Valley HC",
+          "gp": 3,
           "players": [
             {
               "id": 5104918,
@@ -224,6 +225,7 @@
         {
           "id": 398203,
           "name": "Calgary Rockies",
+          "gp": 2,
           "players": [
             {
               "id": 5134674,
@@ -384,6 +386,7 @@
         {
           "id": 398204,
           "name": "Coquitlam HC",
+          "gp": 5,
           "players": [
             {
               "id": 5076824,
@@ -610,6 +613,7 @@
         {
           "id": 398205,
           "name": "HC Edmonton",
+          "gp": 3,
           "players": [
             {
               "id": 5076754,
@@ -825,6 +829,7 @@
         {
           "id": 398206,
           "name": "Island HC",
+          "gp": 3,
           "players": [
             {
               "id": 5077169,
@@ -1051,6 +1056,7 @@
         {
           "id": 398207,
           "name": "Langley HA",
+          "gp": 4,
           "players": [
             {
               "id": 5077196,
@@ -1266,6 +1272,7 @@
         {
           "id": 398208,
           "name": "Northstars HA",
+          "gp": 3,
           "players": [
             {
               "id": 5077480,
@@ -1492,6 +1499,7 @@
         {
           "id": 398210,
           "name": "Surrey Eagles HA",
+          "gp": 3,
           "players": [
             {
               "id": 5076894,
@@ -1718,6 +1726,7 @@
         {
           "id": 398211,
           "name": "Titans Hockey Union",
+          "gp": 3,
           "players": [
             {
               "id": 5076805,
@@ -1933,6 +1942,7 @@
         {
           "id": 398212,
           "name": "Victoria HA",
+          "gp": 3,
           "players": [
             {
               "id": 5184889,
@@ -2126,6 +2136,7 @@
         {
           "id": 398213,
           "name": "Wolves HC",
+          "gp": 2,
           "players": [
             {
               "id": 5185094,
@@ -2336,6 +2347,7 @@
         {
           "id": 398214,
           "name": "Bow Valley HC",
+          "gp": 3,
           "players": [
             {
               "id": 5077131,
@@ -2562,6 +2574,7 @@
         {
           "id": 398215,
           "name": "Calgary Rockies",
+          "gp": 3,
           "players": [
             {
               "id": 5137489,
@@ -2755,6 +2768,7 @@
         {
           "id": 398216,
           "name": "Coquitlam HC",
+          "gp": 5,
           "players": [
             {
               "id": 5077474,
@@ -2970,6 +2984,7 @@
         {
           "id": 398217,
           "name": "HC Edmonton",
+          "gp": 2,
           "players": [
             {
               "id": 5076987,
@@ -3119,6 +3134,7 @@
         {
           "id": 398218,
           "name": "Island HC",
+          "gp": 3,
           "players": [
             {
               "id": 5076958,
@@ -3334,6 +3350,7 @@
         {
           "id": 398219,
           "name": "Langley HA",
+          "gp": 6,
           "players": [
             {
               "id": 5077101,
@@ -3549,6 +3566,7 @@
         {
           "id": 398220,
           "name": "Northstars HA",
+          "gp": 2,
           "players": [
             {
               "id": 5077148,
@@ -3764,6 +3782,7 @@
         {
           "id": 398221,
           "name": "Okanagan HC",
+          "gp": 6,
           "players": [
             {
               "id": 5094993,
@@ -4001,6 +4020,7 @@
         {
           "id": 398222,
           "name": "Surrey Eagles HA",
+          "gp": 5,
           "players": [
             {
               "id": 5077144,
@@ -4238,6 +4258,7 @@
         {
           "id": 398223,
           "name": "Titans Hockey Union",
+          "gp": 2,
           "players": [
             {
               "id": 5162278,
@@ -4448,6 +4469,7 @@
         {
           "id": 398224,
           "name": "Bellingham HC",
+          "gp": 6,
           "players": [
             {
               "id": 5076922,
@@ -4740,6 +4762,7 @@
         {
           "id": 398225,
           "name": "Bow Valley HC",
+          "gp": 3,
           "players": [
             {
               "id": 5077479,
@@ -4977,6 +5000,7 @@
         {
           "id": 398226,
           "name": "Calgary Rockies",
+          "gp": 2,
           "players": [
             {
               "id": 5181407,
@@ -5170,6 +5194,7 @@
         {
           "id": 398227,
           "name": "Coquitlam HC",
+          "gp": 6,
           "players": [
             {
               "id": 5077063,
@@ -5396,6 +5421,7 @@
         {
           "id": 398228,
           "name": "HC Edmonton",
+          "gp": 3,
           "players": [
             {
               "id": 5077046,
@@ -5578,6 +5604,7 @@
         {
           "id": 398229,
           "name": "Island HC",
+          "gp": 6,
           "players": [
             {
               "id": 5077107,
@@ -5793,6 +5820,7 @@
         {
           "id": 398230,
           "name": "Kootenay HA",
+          "gp": 3,
           "players": [
             {
               "id": 5076980,
@@ -6019,6 +6047,7 @@
         {
           "id": 398231,
           "name": "Langley HA",
+          "gp": 6,
           "players": [
             {
               "id": 5077149,
@@ -6245,6 +6274,7 @@
         {
           "id": 398232,
           "name": "Lethbridge United",
+          "gp": 3,
           "players": [
             {
               "id": 5163017,
@@ -6493,6 +6523,7 @@
         {
           "id": 398233,
           "name": "Okanagan HC",
+          "gp": 6,
           "players": [
             {
               "id": 5077418,
@@ -6730,6 +6761,7 @@
         {
           "id": 398234,
           "name": "Titans Hockey Union",
+          "gp": 2,
           "players": [
             {
               "id": 5076900,
@@ -6934,6 +6966,7 @@
         {
           "id": 398235,
           "name": "Victoria HA",
+          "gp": 6,
           "players": [
             {
               "id": 5077426,
@@ -7160,6 +7193,7 @@
         {
           "id": 398236,
           "name": "Wolves HC",
+          "gp": 3,
           "players": [
             {
               "id": 5077264,
@@ -7359,6 +7393,7 @@
         {
           "id": 398237,
           "name": "Bow Valley HC",
+          "gp": 3,
           "players": [
             {
               "id": 5077321,
@@ -7530,6 +7565,7 @@
         {
           "id": 398238,
           "name": "Calgary Rockies",
+          "gp": 3,
           "players": [
             {
               "id": 5077290,
@@ -7712,6 +7748,7 @@
         {
           "id": 398239,
           "name": "Calgary Stallions",
+          "gp": 3,
           "players": [
             {
               "id": 5076774,
@@ -7883,6 +7920,7 @@
         {
           "id": 398240,
           "name": "Coquitlam HC",
+          "gp": 4,
           "players": [
             {
               "id": 5077467,
@@ -8120,6 +8158,7 @@
         {
           "id": 398241,
           "name": "Cowichan Jr Capitals",
+          "gp": 6,
           "players": [
             {
               "id": 5077318,
@@ -8335,6 +8374,7 @@
         {
           "id": 398242,
           "name": "EPIC Hockey Academy",
+          "gp": 3,
           "players": [
             {
               "id": 5133482,
@@ -8517,6 +8557,7 @@
         {
           "id": 398243,
           "name": "HC Edmonton",
+          "gp": 3,
           "players": [
             {
               "id": 5077447,
@@ -8688,6 +8729,7 @@
         {
           "id": 398244,
           "name": "Kootenay HA",
+          "gp": 3,
           "players": [
             {
               "id": 5077490,
@@ -8881,6 +8923,7 @@
         {
           "id": 398245,
           "name": "Langley HA",
+          "gp": 5,
           "players": [
             {
               "id": 5077072,
@@ -9074,6 +9117,7 @@
         {
           "id": 398246,
           "name": "Lethbridge United",
+          "gp": 3,
           "players": [
             {
               "id": 5076942,
@@ -9300,6 +9344,7 @@
         {
           "id": 400960,
           "name": "MacLachlan College",
+          "gp": 1,
           "players": [
             {
               "id": 5178802,
@@ -9526,6 +9571,7 @@
         {
           "id": 409342,
           "name": "Montreal Ravens",
+          "gp": 2,
           "players": [
             {
               "id": 5170504,
@@ -9741,6 +9787,7 @@
         {
           "id": 400950,
           "name": "Niagara Christian College",
+          "gp": 1,
           "players": [
             {
               "id": 5183205,
@@ -9923,6 +9970,7 @@
         {
           "id": 409341,
           "name": "Northside Academy",
+          "gp": 2,
           "players": [
             {
               "id": 5170965,
@@ -10105,6 +10153,7 @@
         {
           "id": 398247,
           "name": "Okanagan HC",
+          "gp": 6,
           "players": [
             {
               "id": 5094856,
@@ -10298,6 +10347,7 @@
         {
           "id": 400103,
           "name": "Oxford Sabres",
+          "gp": 4,
           "players": [
             {
               "id": 5170501,
@@ -10513,6 +10563,7 @@
         {
           "id": 398248,
           "name": "Surrey Eagles HA",
+          "gp": 5,
           "players": [
             {
               "id": 5077463,
@@ -10772,6 +10823,7 @@
         {
           "id": 398249,
           "name": "Titans Hockey Union",
+          "gp": 3,
           "players": [
             {
               "id": 5170251,
@@ -10976,6 +11028,7 @@
         {
           "id": 399986,
           "name": "Velocity HA",
+          "gp": 3,
           "players": [
             {
               "id": 5179143,
@@ -11202,6 +11255,7 @@
         {
           "id": 398251,
           "name": "Wolves HC",
+          "gp": 3,
           "players": [
             {
               "id": 5077237,

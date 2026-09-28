@@ -53,7 +53,7 @@ function parseRoster(html, divisionName) {
     seasonId = Number(teamLink[1]);
     const teamId = Number(teamLink[2]);
     const teamName = stripTags(cells[0]).replace(new RegExp(`^${divisionName}\\s*-\\s*`), '');
-    if (!teams.has(teamId)) teams.set(teamId, { id: teamId, name: teamName, players: [] });
+    if (!teams.has(teamId)) teams.set(teamId, { id: teamId, name: teamName, gp: 0, players: [] });
     teams.get(teamId).players.push({
       id: Number(playerLink[1]),
       number: stripTags(cells[1]),
@@ -69,16 +69,27 @@ function parseRoster(html, divisionName) {
   return { seasonId, teams: [...teams.values()] };
 }
 
-/** The skater stats table on a team's statistics page, keyed by player id. */
+/**
+ * A team's statistics page: its games played (from the standings table) and
+ * the skater stats table, keyed by player id.
+ */
 async function fetchTeamStats(page, seasonId, divisionId, teamId) {
   const url = `${BASE}/team/${seasonId}/0/${divisionId}/${teamId}/statistics`;
   await page.goto(url, { waitUntil: 'networkidle', timeout: 60_000 });
   await page.waitForSelector('table thead th:text-is("G")', { timeout: 30_000 });
-  return page.$$eval('table', (tables) => {
+  return page.$$eval('table', (tables, teamId) => {
     const stats = {};
+    let teamGP = null;
     for (const table of tables) {
       const headers = [...table.querySelectorAll('thead th')].map((th) => th.innerText.trim());
       const col = (name) => headers.indexOf(name);
+      if (col('GP') >= 0 && col('Name') < 0) {
+        const teamRow = [...table.querySelectorAll('tbody tr')].find((row) =>
+          row.querySelector(`a[href$="/${teamId}/statistics"]`)
+        );
+        const gp = teamRow?.querySelectorAll('td')[col('GP')]?.innerText.trim();
+        if (gp) teamGP = Number(gp) || 0;
+      }
       if (col('G') < 0 || col('Name') < 0) continue;
       for (const row of table.querySelectorAll('tbody tr')) {
         const cells = [...row.querySelectorAll('td')];
@@ -89,8 +100,8 @@ async function fetchTeamStats(page, seasonId, divisionId, teamId) {
         stats[id] = { gp: num('GP'), goals: num('G'), assists: num('A'), points: num('PTS'), pim: num('PIM') };
       }
     }
-    return stats;
-  });
+    return { teamGP, players: stats };
+  }, teamId);
 }
 
 async function loadPrevious() {
@@ -104,8 +115,10 @@ async function loadPrevious() {
 async function main() {
   const previous = await loadPrevious();
   const previousPlayers = new Map();
+  const previousTeamGP = new Map();
   for (const division of previous?.divisions ?? []) {
     for (const team of division.teams) {
+      previousTeamGP.set(team.id, team.gp);
       for (const player of team.players) previousPlayers.set(`${team.id}:${player.id}`, player);
     }
   }
@@ -136,12 +149,14 @@ async function main() {
       if (!stats) failedTeams++;
       for (const player of team.players) {
         // Keep the last known stats rather than zeroing them if this team's page failed.
-        const source = stats ? stats[player.id] : previousPlayers.get(`${team.id}:${player.id}`);
+        const source = stats ? stats.players[player.id] : previousPlayers.get(`${team.id}:${player.id}`);
         if (source) {
           const { gp, goals, assists, points, pim } = source;
           Object.assign(player, { gp, goals, assists, points, pim });
         }
       }
+      // Fall back to the most games any player has if the standings row is missing.
+      team.gp = (stats ? stats.teamGP : previousTeamGP.get(team.id)) ?? Math.max(0, ...team.players.map((p) => p.gp));
       team.players.sort((a, b) => Number(a.number) - Number(b.number));
       console.log(`  ${team.name}: ${team.players.length} players${stats ? '' : ' (stats kept from previous run)'}`);
     }
