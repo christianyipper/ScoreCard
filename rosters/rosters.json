@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-10T17:03:34.893Z",
+  "updatedAt": "2026-11-11T17:08:32.793Z",
   "seasonId": 14553,
   "divisions": [
     {
@@ -2566,6 +2566,17 @@
               "assists": 4,
               "points": 6,
               "pim": 8
+            },
+            {
+              "id": 5062727,
+              "number": "76",
+              "name": "Josiah Mitchell (AP)",
+              "position": "Defense",
+              "gp": 0,
+              "goals": 0,
+              "assists": 0,
+              "points": 0,
+              "pim": 0
             },
             {
               "id": 5190505,
@@ -10260,6 +10271,17 @@
               "assists": 8,
               "points": 10,
               "pim": 28
+            },
+            {
+              "id": 5077024,
+              "number": "11",
+              "name": "Luca Allegretto (AP)",
+              "position": "F",
+              "gp": 0,
+              "goals": 0,
+              "assists": 0,
+              "points": 0,
+              "pim": 0
             },
             {
               "id": 5077059,
