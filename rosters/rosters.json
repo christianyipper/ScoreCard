@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-23T21:15:53.205Z",
+  "updatedAt": "2026-11-24T20:13:24.107Z",
   "seasonId": 14553,
   "divisions": [
     {
@@ -2623,17 +2623,6 @@
               "pim": 0
             },
             {
-              "id": 5185094,
-              "number": "43",
-              "name": "Oliver Kent",
-              "position": "D",
-              "gp": 12,
-              "goals": 1,
-              "assists": 4,
-              "points": 5,
-              "pim": 0
-            },
-            {
               "id": 5061273,
               "number": "55",
               "name": "Hunter Jansen (AP)",
@@ -2642,6 +2631,17 @@
               "goals": 0,
               "assists": 0,
               "points": 0,
+              "pim": 0
+            },
+            {
+              "id": 5185094,
+              "number": "60",
+              "name": "Oliver Kent",
+              "position": "D",
+              "gp": 12,
+              "goals": 1,
+              "assists": 4,
+              "points": 5,
               "pim": 0
             },
             {
